@@ -1,0 +1,80 @@
+[
+  {
+    "name": "id",
+    "type": "STRING",
+    "mode": "REQUIRED",
+    "description": "Unique disbursement identifier (hashed). One row per payout attempt to the beneficiary."
+  },
+  {
+    "name": "user_id",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Sender user identifier (hashed). Same user as in the linked payment and receipt."
+  },
+  {
+    "name": "type",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Payout method at destination: BANK, CASH, WALLET or CASH DELIVERY."
+  },
+  {
+    "name": "status",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Normalized payout status. Mixed vocabularies and casing coexist (e.g. PAID/COMPLETED/Success, FAILED/Failed) because each provider reports differently; needs mapping in staging."
+  },
+  {
+    "name": "raw_status",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Status as originally reported by the provider/integration, before normalization into status."
+  },
+  {
+    "name": "provider_status",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Free-form status or code returned by the payout provider (e.g. PAYMENT_HAS_BEEN_COMPLETED, HOLD:11102002, 503). Null for ~78% of rows."
+  },
+  {
+    "name": "amount",
+    "type": "NUMERIC",
+    "mode": "NULLABLE",
+    "description": "Amount to be paid to the beneficiary, expressed in destination_currency (local currency, not USD)."
+  },
+  {
+    "name": "disbursement_provider",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Payout provider/integration that processed the attempt (PROVIDER 1..12)."
+  },
+  {
+    "name": "payer_destination_name",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Paying institution or network at destination (bank, cash-out chain or wallet), anonymized as DESTINATION_n. Several payers operate under each provider."
+  },
+  {
+    "name": "destination_country",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Destination country, ISO 3166-1 alpha-2 (some rows contain \"COSTA RICA\" instead of CR, or are null)."
+  },
+  {
+    "name": "destination_currency",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Currency of amount, ISO 4217 (MXN, GTQ, HNL, COP, USD, DOP, PEN, BRL, CRC)."
+  },
+  {
+    "name": "created_at",
+    "type": "TIMESTAMP",
+    "mode": "NULLABLE",
+    "description": "Timestamp when the disbursement attempt was created (UTC)."
+  },
+  {
+    "name": "updated_at",
+    "type": "TIMESTAMP",
+    "mode": "NULLABLE",
+    "description": "Timestamp of the last status update (UTC). Null for some cancelled/rejected/failed rows."
+  }
+]

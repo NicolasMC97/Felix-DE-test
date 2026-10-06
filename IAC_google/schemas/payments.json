@@ -1,0 +1,86 @@
+[
+  {
+    "name": "id",
+    "type": "STRING",
+    "mode": "REQUIRED",
+    "description": "Unique payment identifier (hashed). One row per charge to the sender."
+  },
+  {
+    "name": "amount",
+    "type": "NUMERIC",
+    "mode": "NULLABLE",
+    "description": "Total charged to the sender in USD, equal to receipt amount_charged + fee. Contains zero and one negative value (data quality)."
+  },
+  {
+    "name": "currency",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Currency of the charge, ISO 4217. Always USD."
+  },
+  {
+    "name": "user_id",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Sender user identifier (hashed)."
+  },
+  {
+    "name": "status",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Payment status: SUCCESSFUL, FAILED, REFUNDED, PENDING_USER_ACTION or STARTED."
+  },
+  {
+    "name": "detailed_status",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Granular status or failure reason (e.g. FAILED_DUE_TO_INSUFFICIENT_FUNDS, FAILED_DUE_TO_SUSPECTED_FRAUD_BY_PROCESSOR). Null for most REFUNDED rows."
+  },
+  {
+    "name": "error_code",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Processor error code. Empty in the current extract."
+  },
+  {
+    "name": "reason",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Free-text reason. Empty in the current extract."
+  },
+  {
+    "name": "type",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Payment method: CARD, APPLE_PAY, CASH, WALLET_POC or ACH."
+  },
+  {
+    "name": "total_intents",
+    "type": "INTEGER",
+    "mode": "NULLABLE",
+    "description": "Number of payment intents. Only populated (value 1) on ~2% of rows."
+  },
+  {
+    "name": "location_of_request_state_code",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "US state code of the request. Only populated for CASH and ACH payments."
+  },
+  {
+    "name": "has_dispute_chargeback",
+    "type": "BOOL",
+    "mode": "NULLABLE",
+    "description": "True if the payment has a dispute or chargeback. Dispute and chargeback cannot be told apart."
+  },
+  {
+    "name": "created_at",
+    "type": "TIMESTAMP",
+    "mode": "NULLABLE",
+    "description": "Timestamp when the payment was created (UTC)."
+  },
+  {
+    "name": "updated_at",
+    "type": "TIMESTAMP",
+    "mode": "NULLABLE",
+    "description": "Timestamp of the last update (UTC)."
+  }
+]
