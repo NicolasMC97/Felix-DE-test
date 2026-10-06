@@ -1,0 +1,80 @@
+[
+  {
+    "name": "id",
+    "type": "STRING",
+    "mode": "REQUIRED",
+    "description": "Unique receipt identifier (hashed). Links one payment to one disbursement attempt."
+  },
+  {
+    "name": "destination_country_code",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Destination country, ISO 3166-1 alpha-2."
+  },
+  {
+    "name": "destination_currency",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Currency the beneficiary receives, ISO 4217."
+  },
+  {
+    "name": "amount_charged",
+    "type": "NUMERIC",
+    "mode": "NULLABLE",
+    "description": "Principal sent, in USD, excluding fee. payment amount = amount_charged + fee."
+  },
+  {
+    "name": "fee",
+    "type": "NUMERIC",
+    "mode": "NULLABLE",
+    "description": "Fee charged to the sender, in USD."
+  },
+  {
+    "name": "exchange_rate",
+    "type": "NUMERIC",
+    "mode": "NULLABLE",
+    "description": "FX rate applied from USD to destination_currency (1 when destination is USD)."
+  },
+  {
+    "name": "promotion_amount",
+    "type": "NUMERIC",
+    "mode": "NULLABLE",
+    "description": "Promotional bonus in USD added to the amount delivered (destination_amount = (amount_charged + promotion_amount) * exchange_rate). Not charged to the sender."
+  },
+  {
+    "name": "destination_amount",
+    "type": "NUMERIC",
+    "mode": "NULLABLE",
+    "description": "Amount the beneficiary receives, in destination_currency."
+  },
+  {
+    "name": "user_id",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Sender user identifier (hashed)."
+  },
+  {
+    "name": "payment_id",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Foreign key to payments.id. A payment can have several receipts when a payout is retried."
+  },
+  {
+    "name": "disbursement_id",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Foreign key to disbursements.id. Unique per receipt."
+  },
+  {
+    "name": "beneficiary_id",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Recipient identifier (hashed). Each beneficiary_id appears under a single user_id."
+  },
+  {
+    "name": "created_at",
+    "type": "TIMESTAMP",
+    "mode": "NULLABLE",
+    "description": "Timestamp when the receipt was created (UTC)."
+  }
+]

@@ -24,9 +24,15 @@ resource "google_bigquery_table" "external_tables" {
   depends_on = [google_storage_bucket_object.csv_files]
 
   external_data_configuration {
-    autodetect    = true
+    autodetect    = false
     source_format = each.value.source_format
     source_uris   = ["gs://${google_storage_bucket.my_bucket.name}/${each.value.gcs_path}"]
+    schema        = file("${path.module}/schemas/${each.key}.json")
+
+    csv_options {
+      quote             = "\""
+      skip_leading_rows = each.value.skip_leading_rows
+    }
   }
 }
 

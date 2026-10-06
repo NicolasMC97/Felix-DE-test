@@ -21,6 +21,10 @@ terraform.rc
 credentials*.json
 service-account*.json
 
+# Large raw data: uploaded to GCS by Terraform, never versioned (GitHub rejects files > 100 MB).
+# Small samples live in IAC_google/files/samples/ and are versioned.
+IAC_google/files/*.csv
+
 # SO / IDE
 .DS_Store
 .idea/

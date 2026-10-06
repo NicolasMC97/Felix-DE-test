@@ -1,0 +1,199 @@
+version: 2
+
+models:
+  - name: stg_remittances__payments
+    description: "Payments (charges to the sender). Deduplicated by payment_id, one row per payment."
+    columns:
+      - name: payment_id
+        description: "Unique payment identifier."
+        data_tests:
+          - unique
+          - not_null
+      - name: user_id
+        description: "Sender user identifier."
+        data_tests:
+          - not_null
+      - name: amount_usd
+        description: "Total charged to the sender in USD (amount_charged + fee of the receipt)."
+        data_tests:
+          - not_null
+      - name: currency
+        description: "Charge currency. Always USD."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['USD']
+      - name: status
+        description: "Payment status."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['SUCCESSFUL', 'FAILED', 'REFUNDED', 'PENDING_USER_ACTION', 'STARTED']
+      - name: status_detail
+        description: "Granular status or failure reason. Null for most REFUNDED rows."
+      - name: payment_method
+        description: "Payment method."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['CARD', 'APPLE_PAY', 'CASH', 'WALLET_POC', 'ACH']
+      - name: total_intents
+        description: "Number of payment intents. Only populated on ~2% of rows."
+      - name: request_state_code
+        description: "US state code of the request. Only populated for CASH and ACH payments."
+      - name: has_dispute_chargeback
+        description: "True if the payment has a dispute or chargeback (cannot be told apart)."
+        data_tests:
+          - not_null
+      - name: created_at
+        description: "Creation timestamp (UTC)."
+        data_tests:
+          - not_null
+      - name: updated_at
+        description: "Last update timestamp (UTC)."
+
+  - name: stg_remittances__disbursements
+    description: "Disbursement attempts (payouts to the beneficiary). Deduplicated by disbursement_id. Statuses are normalized into status_group."
+    columns:
+      - name: disbursement_id
+        description: "Unique disbursement identifier."
+        data_tests:
+          - unique
+          - not_null
+      - name: user_id
+        description: "Sender user identifier."
+        data_tests:
+          - not_null
+      - name: disbursement_method
+        description: "Payout method at destination."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['BANK', 'CASH', 'WALLET', 'CASH DELIVERY']
+      - name: status
+        description: "Status as reported by the provider (upper-cased). Mixed vocabularies."
+        data_tests:
+          - not_null
+      - name: raw_status
+        description: "Original provider status before normalization (upper-cased)."
+      - name: provider_status
+        description: "Free-form status or code returned by the provider. Null for ~78% of rows."
+      - name: amount_local
+        description: "Amount to pay out, in destination_currency (not USD). Null for some FAILED / Pending rows."
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: provider
+        description: "Payout provider / integration (PROVIDER 1..12)."
+        data_tests:
+          - not_null
+      - name: payer_name
+        description: "Paying institution or network at destination (anonymized)."
+        data_tests:
+          - not_null
+      - name: destination_country_code
+        description: "Destination country, ISO 3166-1 alpha-2. 'COSTA RICA' is mapped to CR; null for ~137 rows."
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+          - accepted_values:
+              arguments:
+                values: ['MX', 'GT', 'HN', 'CO', 'SV', 'NI', 'DO', 'EC', 'PE', 'BR', 'CR']
+      - name: destination_currency
+        description: "Currency of amount_local, ISO 4217."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['MXN', 'GTQ', 'HNL', 'COP', 'USD', 'DOP', 'PEN', 'BRL', 'CRC']
+      - name: status_group
+        description: "Normalized status: COMPLETED, FAILED, CANCELLED, IN_PROGRESS or ON_HOLD. UNMAPPED means a new status that needs a mapping."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['COMPLETED', 'FAILED', 'CANCELLED', 'IN_PROGRESS', 'ON_HOLD']
+      - name: created_at
+        description: "Creation timestamp (UTC)."
+        data_tests:
+          - not_null
+      - name: updated_at
+        description: "Last status update timestamp (UTC). Null for some cancelled / rejected / failed rows."
+
+  - name: stg_remittances__receipts
+    description: "Receipts link a payment to a disbursement attempt. Deduplicated by receipt_id. A payment can have several receipts (payout retries)."
+    columns:
+      - name: receipt_id
+        description: "Unique receipt identifier."
+        data_tests:
+          - unique
+          - not_null
+      - name: user_id
+        description: "Sender user identifier."
+        data_tests:
+          - not_null
+      - name: payment_id
+        description: "Foreign key to stg_remittances__payments."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_remittances__payments')
+                field: payment_id
+      - name: disbursement_id
+        description: "Foreign key to stg_remittances__disbursements. Unique per receipt."
+        data_tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('stg_remittances__disbursements')
+                field: disbursement_id
+              config:
+                severity: warn
+      - name: beneficiary_id
+        description: "Recipient identifier. Each beneficiary appears under a single user in this dataset."
+        data_tests:
+          - not_null
+      - name: destination_country_code
+        description: "Destination country, ISO 3166-1 alpha-2."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['MX', 'GT', 'HN', 'CO', 'SV', 'NI', 'DO', 'EC', 'PE', 'BR', 'CR']
+      - name: destination_currency
+        description: "Currency the beneficiary receives, ISO 4217."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['MXN', 'GTQ', 'HNL', 'COP', 'USD', 'DOP', 'PEN', 'BRL', 'CRC']
+      - name: amount_charged_usd
+        description: "Principal sent in USD, excluding fee."
+        data_tests:
+          - not_null
+      - name: fee_usd
+        description: "Fee charged to the sender in USD."
+        data_tests:
+          - not_null
+      - name: exchange_rate
+        description: "FX rate from USD to destination_currency (1 when the destination is USD)."
+        data_tests:
+          - not_null
+      - name: promotion_amount_usd
+        description: "Promotional bonus in USD added to the delivered amount, not charged to the sender."
+        data_tests:
+          - not_null
+      - name: destination_amount_local
+        description: "Amount the beneficiary receives, in destination_currency."
+        data_tests:
+          - not_null
+      - name: created_at
+        description: "Creation timestamp (UTC)."
+        data_tests:
+          - not_null

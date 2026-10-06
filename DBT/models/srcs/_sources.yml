@@ -1,28 +1,109 @@
 version: 2
 
 sources:
-  - name: remittances   
-    description: "Raw production data replicated into BigQuery"
-    
-    # BigQuery-specific routing
-    database: felix-technical-test    
-    schema: felix_dataset             
+  - name: remittances
+    description: "Raw production data replicated into BigQuery as external tables over CSV files in GCS (created by Terraform in IAC_google/)."
 
-    
-    #freshness:
-    #  warn_after: {count: 12, period: hour}
-    #  error_after: {count: 24, period: hour}
-    #loaded_at_field: _partitiontime # Or your specific ingestion timestamp column
+    # BigQuery-specific routing
+    database: felix-technical-test
+    schema: felix_dataset
 
     tables:
-      - name: sales
-        description: "Raw users table directly from the backend database."
+      - name: payments
+        description: "Raw payments: one row per charge made to the sending customer (USD)."
         columns:
-          - name: dia
-            description: "day of the sale"
-          - name: cantidad
-            description: "quantity sell"
-          - name: producto
-            description: "definition of the product"
-          - name: precio
-            description: "prize"
+          - name: id
+            description: "Unique payment identifier (hashed). One row per charge to the sender."
+            data_tests:
+              - unique
+              - not_null
+          - name: amount
+            description: "Total charged to the sender in USD, equal to receipt amount_charged + fee. Contains zero and one negative value (data quality)."
+          - name: currency
+            description: "Currency of the charge, ISO 4217. Always USD."
+          - name: user_id
+            description: "Sender user identifier (hashed)."
+          - name: status
+            description: "Payment status: SUCCESSFUL, FAILED, REFUNDED, PENDING_USER_ACTION or STARTED."
+          - name: detailed_status
+            description: "Granular status or failure reason (e.g. FAILED_DUE_TO_INSUFFICIENT_FUNDS, FAILED_DUE_TO_SUSPECTED_FRAUD_BY_PROCESSOR). Null for most REFUNDED rows."
+          - name: error_code
+            description: "Processor error code. Empty in the current extract."
+          - name: reason
+            description: "Free-text reason. Empty in the current extract."
+          - name: type
+            description: "Payment method: CARD, APPLE_PAY, CASH, WALLET_POC or ACH."
+          - name: total_intents
+            description: "Number of payment intents. Only populated (value 1) on ~2% of rows."
+          - name: location_of_request_state_code
+            description: "US state code of the request. Only populated for CASH and ACH payments."
+          - name: has_dispute_chargeback
+            description: "True if the payment has a dispute or chargeback. Dispute and chargeback cannot be told apart."
+          - name: created_at
+            description: "Timestamp when the payment was created (UTC)."
+          - name: updated_at
+            description: "Timestamp of the last update (UTC)."
+      - name: disbursements
+        description: "Raw disbursements: one row per payout attempt to the beneficiary, in destination currency."
+        columns:
+          - name: id
+            description: "Unique disbursement identifier (hashed). One row per payout attempt to the beneficiary."
+            data_tests:
+              - unique
+              - not_null
+          - name: user_id
+            description: "Sender user identifier (hashed). Same user as in the linked payment and receipt."
+          - name: type
+            description: "Payout method at destination: BANK, CASH, WALLET or CASH DELIVERY."
+          - name: status
+            description: "Normalized payout status. Mixed vocabularies and casing coexist (e.g. PAID/COMPLETED/Success, FAILED/Failed) because each provider reports differently; needs mapping in staging."
+          - name: raw_status
+            description: "Status as originally reported by the provider/integration, before normalization into status."
+          - name: provider_status
+            description: "Free-form status or code returned by the payout provider (e.g. PAYMENT_HAS_BEEN_COMPLETED, HOLD:11102002, 503). Null for ~78% of rows."
+          - name: amount
+            description: "Amount to be paid to the beneficiary, expressed in destination_currency (local currency, not USD)."
+          - name: disbursement_provider
+            description: "Payout provider/integration that processed the attempt (PROVIDER 1..12)."
+          - name: payer_destination_name
+            description: "Paying institution or network at destination (bank, cash-out chain or wallet), anonymized as DESTINATION_n. Several payers operate under each provider."
+          - name: destination_country
+            description: "Destination country, ISO 3166-1 alpha-2 (some rows contain \"COSTA RICA\" instead of CR, or are null)."
+          - name: destination_currency
+            description: "Currency of amount, ISO 4217 (MXN, GTQ, HNL, COP, USD, DOP, PEN, BRL, CRC)."
+          - name: created_at
+            description: "Timestamp when the disbursement attempt was created (UTC)."
+          - name: updated_at
+            description: "Timestamp of the last status update (UTC). Null for some cancelled/rejected/failed rows."
+      - name: receipts
+        description: "Raw receipts: link a payment to a disbursement attempt. A payment can have several receipts when the payout is retried."
+        columns:
+          - name: id
+            description: "Unique receipt identifier (hashed). Links one payment to one disbursement attempt."
+            data_tests:
+              - unique
+              - not_null
+          - name: destination_country_code
+            description: "Destination country, ISO 3166-1 alpha-2."
+          - name: destination_currency
+            description: "Currency the beneficiary receives, ISO 4217."
+          - name: amount_charged
+            description: "Principal sent, in USD, excluding fee. payment amount = amount_charged + fee."
+          - name: fee
+            description: "Fee charged to the sender, in USD."
+          - name: exchange_rate
+            description: "FX rate applied from USD to destination_currency (1 when destination is USD)."
+          - name: promotion_amount
+            description: "Promotional bonus in USD added to the amount delivered (destination_amount = (amount_charged + promotion_amount) * exchange_rate). Not charged to the sender."
+          - name: destination_amount
+            description: "Amount the beneficiary receives, in destination_currency."
+          - name: user_id
+            description: "Sender user identifier (hashed)."
+          - name: payment_id
+            description: "Foreign key to payments.id. A payment can have several receipts when a payout is retried."
+          - name: disbursement_id
+            description: "Foreign key to disbursements.id. Unique per receipt."
+          - name: beneficiary_id
+            description: "Recipient identifier (hashed). Each beneficiary_id appears under a single user_id."
+          - name: created_at
+            description: "Timestamp when the receipt was created (UTC)."
