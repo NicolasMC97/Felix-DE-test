@@ -1,20 +1,20 @@
 external_tables = {
 
-  customers = {
-    local_file    = "./files/customers.csv"
-    gcs_path      = "data/customers.csv"
+  disbursements = {
+    local_file    = "./files/disbursements.csv"
+    gcs_path      = "data/disbursements.csv"
     source_format = "CSV"
   }
 
-  sales = {
-    local_file    = "./files/sales.csv"
-    gcs_path      = "data/sales.csv"
+  payments = {
+    local_file    = "./files/payments.csv"
+    gcs_path      = "data/payments.csv"
     source_format = "CSV"
   }
 
-  transactions = {
-    local_file    = "./files/transactions.csv"
-    gcs_path      = "data/transactions.csv"
+  receipts = {
+    local_file    = "./files/receipts.csv"
+    gcs_path      = "data/receipts.csv"
     source_format = "CSV"
   }
 }
