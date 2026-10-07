@@ -27,7 +27,8 @@ Documentation:
 | [`Documentation/data-modeling.md`](Documentation/data-modeling.md) | Step by step description of the dimensional model, with the diagram |
 | [`Documentation/data-relationship-validation.md`](Documentation/data-relationship-validation.md) | Validation of the relationships between payments, receipts and disbursements |
 | [`Documentation/dbt-tests.md`](Documentation/dbt-tests.md) | Staging test results and decisions |
-| [`Documentation/business-questions-and-kpis.md`](Documentation/business-questions-and-kpis.md) | KPIs and business questions answered by the marts, by domain |
+| [`Documentation/business-questions-and-kpis.md`](Documentation/business-questions-and-kpis.md) | KPIs and business questions answered by the marts and the semantic layer, by domain |
+| [`Documentation/semantic-layer.md`](Documentation/semantic-layer.md) | Semantic layer: metric catalog, dimensions, how to query it, limits |
 
 Diagrams live in `Documentation/images/`. The architecture SVG is generated with `python3 Documentation/images/generate_architecture.py` (needs network access for the logos); the dimensional model SVG is edited directly.
 

@@ -196,7 +196,7 @@ TPV of successful transfers 237.69M USD, fee revenue 2.90M USD (take rate 1.22%)
 
 ## 5. Semantic layer (`DBT/models/semantic/`)
 
-KPIs are defined once as MetricFlow metrics so every tool computes them the same way. The full KPI catalog and the questions it answers: [business-questions-and-kpis.md](business-questions-and-kpis.md).
+KPIs are defined once as MetricFlow metrics so every tool computes them the same way. Metric catalog, dimensions and example queries: [semantic-layer.md](semantic-layer.md). The KPI catalog and the questions it answers: [business-questions-and-kpis.md](business-questions-and-kpis.md).
 
 ### What was built
 
@@ -228,5 +228,5 @@ The project was renamed from `Felix-DE-test` to `felix_de_test` because MetricFl
 3. Staging models are views over external tables, so every query re-reads the CSVs from GCS. Materialize them as tables if query cost or latency matters.
 4. `dim_date` has a fixed range (2026-01-01 to 2026-12-31); extend it or derive it from staging if new data arrives.
 5. Semantic layer: migrate the YAML to the new dbt spec (dbt 2.0 warns that the legacy format is deprecated; `dbt-autofix` can help) and publish it through dbt Cloud so BI tools can query it.
-6. Semantic layer: add the KPIs still marked as proposed in [business-questions-and-kpis.md](business-questions-and-kpis.md) (P90 and P95 delivery time, SLA compliance, payout failure by payer, customer lifetime value) and re-add MoM growth and cumulative TPV once MetricFlow supports them on BigQuery.
+6. Semantic layer: add the KPIs still marked as proposed in [business-questions-and-kpis.md](business-questions-and-kpis.md) (P90 and P95 delivery time, SLA compliance, customer lifetime value, per-user rankings) and re-add MoM growth and cumulative TPV once MetricFlow supports them on BigQuery.
 7. For a live pipeline: add the two snapshots described in data-modeling.md (user activity segment and disbursement status), incremental loads and scheduling.
