@@ -2,7 +2,7 @@
 
 Dimensional model built on top of the staging layer (`DBT/models/`). Built with dbt on BigQuery, project `felix-technical-test`, dataset `dbt_dev_local` (target `dev`). The earlier cross-table checks that drove the design are in [data-relationship-validation.md](data-relationship-validation.md).
 
-![Dimensional model](dimensional-model.svg)
+![Dimensional model](images/dimensional-model.svg)
 
 Contents:
 1. [Business context and metrics](#1-business-context-and-metrics)

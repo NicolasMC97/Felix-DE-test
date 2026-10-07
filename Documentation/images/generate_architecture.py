@@ -1,6 +1,6 @@
-"""Generates Documentation/architecture.svg (the diagram embedded in the root README).
+"""Generates Documentation/images/architecture.svg (the diagram embedded in the root README).
 
-Usage:  python3 Documentation/generate_architecture.py
+Usage:  python3 Documentation/images/generate_architecture.py
 
 Logos are downloaded from Simple Icons (CDN) at run time and embedded as vector paths,
 so the resulting SVG is self-contained and renders on GitHub. Needs network access.

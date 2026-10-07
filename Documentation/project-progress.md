@@ -152,7 +152,7 @@ Retries matter: summing all receipts of a payment double counts money. Metrics m
 
 Star schema built on the staging layer. Full description of every step: [data-modeling.md](data-modeling.md). Relationship checks that drove the design: [data-relationship-validation.md](data-relationship-validation.md).
 
-![Dimensional model](dimensional-model.svg)
+![Dimensional model](images/dimensional-model.svg)
 
 ### What was built
 
