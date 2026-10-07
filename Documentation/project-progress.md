@@ -161,7 +161,7 @@ Star schema built on the staging layer. Full description of every step: [data-mo
 | Transformations | `models/transformations/` | `trf_payment_receipts` (one row per payout attempt), `trf_transfers` (one row per payment with receipt, money from the last receipt), `trf_user_activity` (one row per sender) |
 | Dimensions | `models/dim/` | `dim_date`, `dim_corridor`, `dim_payment_method`, `dim_payment_status`, `dim_disbursement_status`, `dim_payout_provider`, `dim_user` |
 | Facts | `models/fact/` | `fct_payments` (payment), `fct_disbursements` (payout attempt), `fct_transfers` (payment with receipt, accumulating snapshot) |
-| Marts | `models/mart/` | `mart_finance_daily`, `mart_payment_conversion`, `mart_payout_performance`, `mart_user_cohorts`, `mart_risk`, `mart_data_quality` |
+| Marts | `models/mart/` | `mart_finance_daily`, `mart_payment_conversion`, `mart_payout_performance`, `mart_user_cohorts`, `mart_user_daily`, `mart_risk`, `mart_data_quality` |
 
 Transformations, dimensions, facts and marts are materialized as tables; staging stays as views. Shared macros: `generate_surrogate_key` and `date_key`.
 
@@ -182,6 +182,7 @@ TPV of successful transfers 237.69M USD, fee revenue 2.90M USD (take rate 1.22%)
 | Metric | Where |
 |---|---|
 | Total amount by month | `mart_finance_daily`, summed by month |
+| Behavior per user per day | `mart_user_daily` |
 | Recurring customers | `dim_user.is_repeat_user` and `mart_user_cohorts` |
 | Providers by failed disbursements | `mart_payout_performance` |
 | Chargeback rate | `mart_risk` (approximation, disputes and chargebacks are merged in the source) |

@@ -12,7 +12,7 @@ Repo to develop Data Engineer Manager test to Felix
 | Staging | dbt views (dedup, rename, status normalization) | `DBT/models/staging/` |
 | Transformations | dbt tables (receipts with attempts, transfers, user activity) | `DBT/models/transformations/` |
 | Dimensions and facts | dbt tables, star schema (7 dimensions, 3 facts) | `DBT/models/dim/`, `DBT/models/fact/` |
-| Marts | dbt tables (finance, conversion, payouts, cohorts, risk, data quality) | `DBT/models/mart/` |
+| Marts | dbt tables (finance, conversion, payouts, cohorts, user daily, risk, data quality) | `DBT/models/mart/` |
 
 dbt models are built in the dataset set in the dbt profile (`dbt_dev_local` for the `dev` target).
 

@@ -28,3 +28,8 @@ select 'mart_data_quality', count(*)
 from {{ ref('mart_data_quality') }}
 group by month, check_name, issue_type
 having count(*) > 1
+union all
+select 'mart_user_daily', count(*)
+from {{ ref('mart_user_daily') }}
+group by user_id, date_day
+having count(*) > 1

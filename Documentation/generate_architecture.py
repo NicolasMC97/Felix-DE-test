@@ -96,7 +96,7 @@ o.append(box(790,BY,140,110,'Transformations','trf_* tables (3)',stroke='#669DF6
 o.append(table_icon(843,BY+22,'#2563EB'))
 o.append(box(960,BY,140,110,'Dims &amp; Facts','7 dims, 3 facts',stroke='#669DF6'))
 o.append(star_icon(1013,BY+22))
-o.append(box(1130,BY,140,110,'Marts','mart_* tables (6)',stroke='#669DF6'))
+o.append(box(1130,BY,140,110,'Marts','mart_* tables (7)',stroke='#669DF6'))
 o.append(bars_icon(1183,BY+22,'#2563EB'))
 # BI consumer
 o.append(box(1350,BY,160,110,'Looker','BI, reads the marts',dashed=True,stroke='#4285F4'))

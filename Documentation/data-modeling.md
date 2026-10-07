@@ -116,6 +116,7 @@ Design points:
 | `mart_payment_conversion` | day x payment method | Payments, success and refund rates, amounts, failures split by category. |
 | `mart_payout_performance` | day x provider x corridor | Attempts by status group, completion rate, retry rate, average and median minutes to complete. |
 | `mart_user_cohorts` | cohort month x activity month | Cohort size, active users, retention rate, TPV per cohort user. |
+| `mart_user_daily` | user x day | Successful transfers, TPV, fees, promotions, average ticket, methods and corridors used, retries, disputes, cohort and days since first payment. Only days with a successful payment. |
 | `mart_risk` | month x payment method | Disputed payments and amount, dispute rate, refund rate, fraud-related failure rate. |
 | `mart_data_quality` | month x check x issue type | Affected records and percentage, net and absolute amount involved. |
 
