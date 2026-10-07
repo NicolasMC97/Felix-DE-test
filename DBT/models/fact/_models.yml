@@ -1,0 +1,284 @@
+version: 2
+
+models:
+  - name: fct_payments
+    description: "One row per payment (charge to the sender), any status. Grain: payment_id."
+    columns:
+      - name: payment_id
+        description: "Unique payment identifier."
+        data_tests:
+          - unique
+          - not_null
+      - name: user_id
+        description: "Sender, foreign key to dim_user."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_user')
+                field: user_id
+      - name: payment_created_date_key
+        description: "Creation date as yyyymmdd (UTC), foreign key to dim_date."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
+      - name: payment_method_key
+        description: "Foreign key to dim_payment_method."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_payment_method')
+                field: payment_method_key
+      - name: payment_status_key
+        description: "Foreign key to dim_payment_status."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_payment_status')
+                field: payment_status_key
+      - name: amount_usd
+        description: "Amount charged to the sender in USD."
+      - name: payment_status
+        description: "Payment status (degenerate copy of the dimension for easy filtering)."
+      - name: is_successful
+        description: "True when the payment status is SUCCESSFUL."
+      - name: is_refunded
+        description: "True when the payment status is REFUNDED."
+      - name: is_failed
+        description: "True when the payment status is FAILED."
+      - name: has_dispute_chargeback
+        description: "True when the payment has a dispute or chargeback."
+      - name: request_state_code
+        description: "US state code of the request. Only populated for a handful of CASH and ACH payments (0.05% overall)."
+      - name: total_intents
+        description: "Number of payment intents. Only populated on ~2% of rows."
+      - name: has_receipt
+        description: "True when the payment has at least one receipt."
+      - name: payout_attempts_count
+        description: "Number of payout attempts (receipts). 0 when the payment has no receipt."
+      - name: is_payout_not_created
+        description: "True for SUCCESSFUL payments with no receipt: the payout was not created (yet). Almost all from the last months of the extract."
+      - name: created_at
+        description: "Payment creation timestamp (UTC)."
+      - name: updated_at
+        description: "Last update timestamp (UTC)."
+
+  - name: fct_disbursements
+    description: "One row per disbursement (payout attempt). Grain: disbursement_id. Corridor comes from the receipt because destination_country is incomplete in disbursements."
+    columns:
+      - name: disbursement_id
+        description: "Unique disbursement identifier."
+        data_tests:
+          - unique
+          - not_null
+      - name: receipt_id
+        description: "Receipt linking the payment to this attempt."
+        data_tests:
+          - unique
+          - not_null
+      - name: payment_id
+        description: "Payment this attempt belongs to."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_payments')
+                field: payment_id
+      - name: user_id
+        description: "Sender, foreign key to dim_user."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_user')
+                field: user_id
+      - name: disbursement_created_date_key
+        description: "Creation date as yyyymmdd (UTC), foreign key to dim_date."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
+      - name: corridor_key
+        description: "Foreign key to dim_corridor."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_corridor')
+                field: corridor_key
+      - name: payout_provider_key
+        description: "Foreign key to dim_payout_provider."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_payout_provider')
+                field: payout_provider_key
+      - name: disbursement_status_key
+        description: "Foreign key to dim_disbursement_status."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_disbursement_status')
+                field: disbursement_status_key
+      - name: amount_local
+        description: "Amount to pay the beneficiary in destination currency."
+      - name: disbursement_status_group
+        description: "Normalized status group (COMPLETED, FAILED, CANCELLED, IN_PROGRESS, ON_HOLD)."
+      - name: is_completed
+        description: "True when the status group is COMPLETED."
+      - name: attempt_number
+        description: "Order of the attempt within the payment, 1 = first."
+      - name: attempts_count
+        description: "Total attempts of the payment."
+      - name: is_last_attempt
+        description: "True for the most recent attempt of the payment."
+      - name: minutes_since_creation
+        description: "Minutes between created_at and updated_at. Null when updated_at is missing or earlier than created_at."
+      - name: created_at
+        description: "Disbursement creation timestamp (UTC)."
+      - name: updated_at
+        description: "Last status update timestamp (UTC)."
+
+  - name: fct_transfers
+    description: "One row per transfer: a payment with at least one receipt (accumulating snapshot: payment created, receipt created, payout completed). Money comes from the payment and the last receipt only. Grain: payment_id."
+    columns:
+      - name: payment_id
+        description: "Unique payment identifier, primary key."
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_payments')
+                field: payment_id
+      - name: receipt_id
+        description: "Last receipt of the payment."
+        data_tests:
+          - unique
+          - not_null
+      - name: disbursement_id
+        description: "Disbursement of the last attempt."
+        data_tests:
+          - not_null
+      - name: user_id
+        description: "Sender, foreign key to dim_user."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_user')
+                field: user_id
+      - name: payment_created_date_key
+        description: "Milestone 1: payment creation date, foreign key to dim_date."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
+      - name: receipt_created_date_key
+        description: "Milestone 2: last receipt creation date, foreign key to dim_date."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
+      - name: payout_completed_date_key
+        description: "Milestone 3: payout completion date. Null until the payout is completed."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
+      - name: corridor_key
+        description: "Foreign key to dim_corridor."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_corridor')
+                field: corridor_key
+      - name: payment_method_key
+        description: "Foreign key to dim_payment_method."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_payment_method')
+                field: payment_method_key
+      - name: payment_status_key
+        description: "Foreign key to dim_payment_status."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_payment_status')
+                field: payment_status_key
+      - name: payout_provider_key
+        description: "Foreign key to dim_payout_provider. Null when the disbursement is missing in the source."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_payout_provider')
+                field: payout_provider_key
+      - name: disbursement_status_key
+        description: "Foreign key to dim_disbursement_status. Null when the disbursement is missing in the source."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_disbursement_status')
+                field: disbursement_status_key
+      - name: payment_amount_usd
+        description: "Amount charged to the sender in the payment (TPV measure)."
+      - name: amount_charged_usd
+        description: "Principal sent in USD, excluding fee, from the last receipt."
+      - name: fee_usd
+        description: "Fee charged to the sender in USD (revenue measure), from the last receipt."
+      - name: promotion_amount_usd
+        description: "Promotional bonus in USD, a cost not charged to the sender."
+      - name: exchange_rate
+        description: "FX rate applied from USD to the destination currency."
+      - name: destination_amount_local
+        description: "Amount the beneficiary receives in destination currency."
+      - name: payment_status
+        description: "Payment status."
+      - name: payout_status_group
+        description: "Normalized status group of the last payout attempt."
+      - name: is_successful_payment
+        description: "True when the payment is SUCCESSFUL. Revenue metrics should filter on this."
+      - name: is_payout_completed
+        description: "True when the last payout attempt is COMPLETED."
+      - name: has_disbursement
+        description: "False when the receipt points to a disbursement missing in the source."
+      - name: attempts_count
+        description: "Number of payout attempts."
+      - name: is_retried
+        description: "True when the payout needed more than one attempt."
+      - name: minutes_to_complete
+        description: "Minutes from payment creation to payout completion. Only for completed payouts."
+      - name: has_dispute_chargeback
+        description: "True when the payment has a dispute or chargeback."
+      - name: expected_amount_usd
+        description: "amount_charged_usd + fee_usd."
+      - name: amount_diff_usd
+        description: "payment_amount_usd minus expected_amount_usd."
+      - name: has_amount_mismatch
+        description: "True when the payment amount does not match amount_charged + fee. Used by the data quality mart."
+      - name: amount_mismatch_type
+        description: "FEE_NOT_RECORDED, RECEIPT_HIGHER, NEGATIVE_OR_ZERO_AMOUNT or OTHER. Null when amounts match."
+      - name: payment_created_at
+        description: "Payment creation timestamp (UTC)."
+      - name: receipt_created_at
+        description: "Last receipt creation timestamp (UTC)."
+      - name: payout_completed_at
+        description: "Payout completion timestamp (UTC). Null until completed."
