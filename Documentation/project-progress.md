@@ -1,13 +1,14 @@
 # Project Progress
 
-Take-home assessment for the Data Engineering Manager role at Félix. A remittance is a **payment** made by the sender plus a **disbursement** to the beneficiary; **receipts** link both. This document records what has been built so far.
+Take-home assessment for the Data Engineering Manager role at Félix. A remittance is a **payment** made by the sender plus a **disbursement** to the beneficiary; **receipts** link both. This document records what has been built so far. KPIs and the business questions they answer: [business-questions-and-kpis.md](business-questions-and-kpis.md).
 
 Contents:
 1. [Infrastructure as Code](#1-infrastructure-as-code-iac_google)
 2. [Dataset schema definition and initial findings](#2-dataset-schema-definition-and-initial-findings)
 3. [dbt staging models and tests](#3-dbt-staging-models-and-tests-dbt)
 4. [Data model: transformations, dimensions, facts and marts](#4-data-model-transformations-dimensions-facts-and-marts)
-5. [Pending work](#5-pending-work)
+5. [Semantic layer](#5-semantic-layer-dbtmodelssemantic)
+6. [Pending work](#6-pending-work)
 
 ---
 
@@ -162,8 +163,9 @@ Star schema built on the staging layer. Full description of every step: [data-mo
 | Dimensions | `models/dim/` | `dim_date`, `dim_corridor`, `dim_payment_method`, `dim_payment_status`, `dim_disbursement_status`, `dim_payout_provider`, `dim_user` |
 | Facts | `models/fact/` | `fct_payments` (payment), `fct_disbursements` (payout attempt), `fct_transfers` (payment with receipt, accumulating snapshot) |
 | Marts | `models/mart/` | `mart_finance_daily`, `mart_payment_conversion`, `mart_payout_performance`, `mart_user_cohorts`, `mart_user_daily`, `mart_risk`, `mart_data_quality` |
+| Semantic layer | `models/semantic/` | 8 semantic models, 53 metrics and `metricflow_time_spine` (section 5) |
 
-Transformations, dimensions, facts and marts are materialized as tables; staging stays as views. Shared macros: `generate_surrogate_key` and `date_key`.
+Transformations, dimensions, facts and marts are materialized as tables; staging stays as views. `mart_user_daily` (user x day, successful payments only) was added to answer user behavior per day. Shared macros: `generate_surrogate_key` and `date_key`.
 
 ### Key decisions
 
@@ -175,7 +177,7 @@ Transformations, dimensions, facts and marts are materialized as tables; staging
 
 ### Results
 
-TPV of successful transfers 237.69M USD, fee revenue 2.90M USD (take rate 1.22%), 722,091 successful transfers, 421,412 senders. Latest full `dbt build`: all models and tests of this layer pass; the only error comes from the dbt starter models in `models/example/`.
+TPV of successful transfers 237.69M USD, fee revenue 2.90M USD (take rate 1.22%), 722,091 successful transfers, 421,412 senders. Latest full `dbt build`: all models and tests of this layer pass. The dbt starter models in `models/example/` were removed.
 
 ### How the requested metrics map to the marts
 
@@ -183,6 +185,7 @@ TPV of successful transfers 237.69M USD, fee revenue 2.90M USD (take rate 1.22%)
 |---|---|
 | Total amount by month | `mart_finance_daily`, summed by month |
 | Behavior per user per day | `mart_user_daily` |
+| Any KPI at any grain (country, method, provider, month) | semantic layer, section 5 |
 | Recurring customers | `dim_user.is_repeat_user` and `mart_user_cohorts` |
 | Providers by failed disbursements | `mart_payout_performance` |
 | Chargeback rate | `mart_risk` (approximation, disputes and chargebacks are merged in the source) |
@@ -191,11 +194,39 @@ TPV of successful transfers 237.69M USD, fee revenue 2.90M USD (take rate 1.22%)
 
 ---
 
-## 5. Pending work
+## 5. Semantic layer (`DBT/models/semantic/`)
 
-1. Delete the dbt starter models in `models/example/`: `my_first_dbt_model` fails its `not_null` test and breaks `dbt build`.
-2. Build the mart for the users that make up 50% of the volume (cumulative share of TPV by user, from `dim_user`).
-3. Confirm the business rule behind the 957 amount mismatches and the open questions: status mapping assumptions (`TRANSMITTED`, `WIRE_RELEASED`, `WIRE_CONFIRMED` as in progress, `REJECTED` as failed), findings 2, 3, 5 and 11.
-4. Staging models are views over external tables, so every query re-reads the CSVs from GCS. Materialize them as tables if query cost or latency matters.
-5. `dim_date` has a fixed range (2026-01-01 to 2026-12-31); extend it or derive it from staging if new data arrives.
-6. For a live pipeline: add the two snapshots described in data-modeling.md (user activity segment and disbursement status), incremental loads and scheduling.
+KPIs are defined once as MetricFlow metrics so every tool computes them the same way. The full KPI catalog and the questions it answers: [business-questions-and-kpis.md](business-questions-and-kpis.md).
+
+### What was built
+
+| File | Content |
+|---|---|
+| `_semantic_models.yml` | Three fact semantic models (`transfers`, `payments`, `disbursements`) and five dimension ones (`users`, `corridors`, `payment_methods`, `payment_statuses`, `payout_providers`). Entities define the joins. |
+| `_metrics.yml` | 53 metrics: revenue and volume, payments and conversion, payouts and delivery, customers, risk. |
+| `metricflow_time_spine.sql` and `_time_spine.yml` | Day-grain calendar over `dim_date`, required by MetricFlow. |
+
+### Key decisions
+
+- **Semantic models sit on facts and dimensions, not on marts.** Ratios (take rate, success rate, dispute rate) are recomputed from additive measures, so they stay correct at any grain. Marts cannot be re-aggregated without breaking ratios.
+- **Money measures count successful payments only** (`if(is_successful_payment, ...)`), the same rule as `mart_finance_daily`; conversion and risk measures read `fct_payments` with every status.
+- **Median delivery time** is an approximate percentile, the only kind BigQuery supports in MetricFlow.
+- **Left out on purpose:** cumulative and month-offset metrics (MoM growth, cumulative TPV) because MetricFlow generates SQL that mixes `DATETIME` and `TIMESTAMP` and BigQuery rejects it. Retention by cohort stays in `mart_user_cohorts`.
+
+### Validation
+
+`dbt sl` needs a dbt Cloud project, so the layer is checked with the open-source MetricFlow CLI (`dbt-metricflow` with `dbt-core` 1.12 and `dbt-bigquery`). `mf validate-configs` passes against BigQuery (semantic models, dimensions, entities, measures and metrics, 0 errors). Queries reproduce the facts: monthly TPV adds up to 237.69M USD and the take rate is 1.22%. Commands are in the root README.
+
+The project was renamed from `Felix-DE-test` to `felix_de_test` because MetricFlow rejects hyphens in the project name, and the unused `example` config was dropped from `dbt_project.yml`.
+
+---
+
+## 6. Pending work
+
+1. Build the mart for the users that make up 50% of the volume (cumulative share of TPV by user, from `dim_user`).
+2. Confirm the business rule behind the 957 amount mismatches and the open questions: status mapping assumptions (`TRANSMITTED`, `WIRE_RELEASED`, `WIRE_CONFIRMED` as in progress, `REJECTED` as failed), findings 2, 3, 5 and 11.
+3. Staging models are views over external tables, so every query re-reads the CSVs from GCS. Materialize them as tables if query cost or latency matters.
+4. `dim_date` has a fixed range (2026-01-01 to 2026-12-31); extend it or derive it from staging if new data arrives.
+5. Semantic layer: migrate the YAML to the new dbt spec (dbt 2.0 warns that the legacy format is deprecated; `dbt-autofix` can help) and publish it through dbt Cloud so BI tools can query it.
+6. Semantic layer: add the KPIs still marked as proposed in [business-questions-and-kpis.md](business-questions-and-kpis.md) (P90 and P95 delivery time, SLA compliance, payout failure by payer, customer lifetime value) and re-add MoM growth and cumulative TPV once MetricFlow supports them on BigQuery.
+7. For a live pipeline: add the two snapshots described in data-modeling.md (user activity segment and disbursement status), incremental loads and scheduling.
