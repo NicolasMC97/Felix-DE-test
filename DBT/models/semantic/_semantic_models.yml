@@ -28,6 +28,7 @@ semantic_models:
     dimensions:
       - name: payment_created_at
         type: time
+        expr: date(payment_created_at)
         type_params:
           time_granularity: day
       - name: is_successful_payment
@@ -95,6 +96,7 @@ semantic_models:
     dimensions:
       - name: created_at
         type: time
+        expr: date(created_at)
         type_params:
           time_granularity: day
       - name: is_payout_not_created
@@ -148,6 +150,7 @@ semantic_models:
     dimensions:
       - name: created_at
         type: time
+        expr: date(created_at)
         type_params:
           time_granularity: day
       - name: disbursement_status_group
@@ -178,7 +181,11 @@ semantic_models:
         expr: "if(is_completed and minutes_since_creation is not null, 1, 0)"
       - name: median_minutes_to_complete
         description: "Median minutes to complete, completed attempts only."
-        agg: median
+        agg: percentile
+        agg_params:
+          percentile: 0.5
+          use_discrete_percentile: false
+          use_approximate_percentile: true
         expr: "if(is_completed, minutes_since_creation, null)"
 
   # ---------------------------------------------------------------- dimensions
@@ -239,8 +246,9 @@ semantic_models:
         type: primary
         expr: payment_method_key
     dimensions:
-      - name: payment_method
+      - name: method
         type: categorical
+        expr: payment_method
       - name: payment_method_category
         type: categorical
 
@@ -251,8 +259,9 @@ semantic_models:
         type: primary
         expr: payment_status_key
     dimensions:
-      - name: payment_status
+      - name: status
         type: categorical
+        expr: payment_status
       - name: payment_status_detail
         type: categorical
       - name: failure_category

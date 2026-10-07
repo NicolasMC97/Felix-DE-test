@@ -60,30 +60,6 @@ metrics:
     label: Net revenue per active sender (USD)
     type: ratio
     type_params: {numerator: net_revenue_usd, denominator: active_senders}
-  - name: tpv_usd_prev_month
-    label: TPV previous month (USD)
-    type: derived
-    type_params:
-      expr: tpv_usd
-      metrics:
-        - name: tpv_usd
-          offset_window: 1 month
-  - name: tpv_mom_growth
-    label: TPV month over month growth
-    description: "Query with monthly granularity."
-    type: derived
-    type_params:
-      expr: (tpv_usd - tpv_prev) / tpv_prev
-      metrics:
-        - name: tpv_usd
-        - name: tpv_usd
-          offset_window: 1 month
-          alias: tpv_prev
-  - name: tpv_usd_cumulative
-    label: Cumulative TPV (USD)
-    type: cumulative
-    type_params:
-      measure: tpv_usd
 
   # ---------------------------------------------------------------- payments and conversion
   - name: payments_count
