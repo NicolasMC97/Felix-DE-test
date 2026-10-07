@@ -1,0 +1,276 @@
+version: 2
+
+metrics:
+  # ---------------------------------------------------------------- revenue and volume
+  - name: tpv_usd
+    label: TPV (USD)
+    description: "Total payment volume: amount of successful payments in USD."
+    type: simple
+    type_params: {measure: tpv_usd}
+  - name: transfers_count
+    label: Transfers
+    description: "Successful transfers."
+    type: simple
+    type_params: {measure: transfers_count}
+  - name: fee_revenue_usd
+    label: Fee revenue (USD)
+    type: simple
+    type_params: {measure: fee_revenue_usd}
+  - name: promotion_cost_usd
+    label: Promotion cost (USD)
+    type: simple
+    type_params: {measure: promotion_cost_usd}
+  - name: principal_usd
+    label: Principal (USD)
+    type: simple
+    type_params: {measure: principal_usd}
+  - name: active_senders
+    label: Active senders
+    description: "Distinct users with a successful payment in the period."
+    type: simple
+    type_params: {measure: active_senders}
+  - name: net_revenue_usd
+    label: Net revenue (USD)
+    description: "Fee revenue minus promotion cost."
+    type: derived
+    type_params:
+      expr: fee_revenue_usd - promotion_cost_usd
+      metrics: [fee_revenue_usd, promotion_cost_usd]
+  - name: take_rate
+    label: Take rate
+    description: "Fee revenue / TPV."
+    type: ratio
+    type_params: {numerator: fee_revenue_usd, denominator: tpv_usd}
+  - name: net_take_rate
+    label: Net take rate
+    description: "Net revenue / TPV."
+    type: ratio
+    type_params: {numerator: net_revenue_usd, denominator: tpv_usd}
+  - name: promotion_intensity
+    label: Promotion intensity
+    description: "Promotion cost / fee revenue."
+    type: ratio
+    type_params: {numerator: promotion_cost_usd, denominator: fee_revenue_usd}
+  - name: avg_ticket_usd
+    label: Average ticket (USD)
+    description: "TPV / transfers."
+    type: ratio
+    type_params: {numerator: tpv_usd, denominator: transfers_count}
+  - name: net_revenue_per_sender_usd
+    label: Net revenue per active sender (USD)
+    type: ratio
+    type_params: {numerator: net_revenue_usd, denominator: active_senders}
+  - name: tpv_usd_prev_month
+    label: TPV previous month (USD)
+    type: derived
+    type_params:
+      expr: tpv_usd
+      metrics:
+        - name: tpv_usd
+          offset_window: 1 month
+  - name: tpv_mom_growth
+    label: TPV month over month growth
+    description: "Query with monthly granularity."
+    type: derived
+    type_params:
+      expr: (tpv_usd - tpv_prev) / tpv_prev
+      metrics:
+        - name: tpv_usd
+        - name: tpv_usd
+          offset_window: 1 month
+          alias: tpv_prev
+  - name: tpv_usd_cumulative
+    label: Cumulative TPV (USD)
+    type: cumulative
+    type_params:
+      measure: tpv_usd
+
+  # ---------------------------------------------------------------- payments and conversion
+  - name: payments_count
+    label: Payments attempted
+    type: simple
+    type_params: {measure: payments_count}
+  - name: successful_payments
+    label: Successful payments
+    type: simple
+    type_params: {measure: successful_payments}
+  - name: failed_payments
+    label: Failed payments
+    type: simple
+    type_params: {measure: failed_payments}
+  - name: refunded_payments
+    label: Refunded payments
+    type: simple
+    type_params: {measure: refunded_payments}
+  - name: attempted_amount_usd
+    label: Attempted amount (USD)
+    type: simple
+    type_params: {measure: attempted_amount_usd}
+  - name: successful_amount_usd
+    label: Successful amount (USD)
+    type: simple
+    type_params: {measure: successful_amount_usd}
+  - name: failed_amount_usd
+    label: Amount lost to failures (USD)
+    type: derived
+    type_params:
+      expr: attempted_amount_usd - successful_amount_usd
+      metrics: [attempted_amount_usd, successful_amount_usd]
+  - name: success_rate
+    label: Success rate
+    description: "Successful / payments attempted."
+    type: ratio
+    type_params: {numerator: successful_payments, denominator: payments_count}
+  - name: refunded_or_successful_payments
+    label: Successful or refunded payments
+    type: derived
+    type_params:
+      expr: successful_payments + refunded_payments
+      metrics: [successful_payments, refunded_payments]
+  - name: refund_rate
+    label: Refund rate
+    description: "Refunded / (successful + refunded)."
+    type: ratio
+    type_params: {numerator: refunded_payments, denominator: refunded_or_successful_payments}
+  - name: recoverable_failed_payments
+    label: Recoverable failed payments
+    description: "Failures a retry or another method can fix: insufficient funds, authentication, provider or bank."
+    type: simple
+    type_params: {measure: failed_payments}
+    filter: |
+      {{ Dimension('payment_status__failure_category') }} in ('INSUFFICIENT_FUNDS', 'AUTHENTICATION', 'PROVIDER_OR_BANK')
+  - name: recoverable_failure_share
+    label: Recoverable failure share
+    type: ratio
+    type_params: {numerator: recoverable_failed_payments, denominator: failed_payments}
+  - name: transfer_retry_rate
+    label: Transfer retry rate
+    description: "Successful transfers with more than one payout attempt / successful transfers."
+    type: ratio
+    type_params: {numerator: retried_transfers, denominator: transfers_count}
+  - name: retried_transfers
+    label: Retried transfers
+    type: simple
+    type_params: {measure: retried_transfers}
+
+  # ---------------------------------------------------------------- payouts and delivery
+  - name: payout_attempts
+    label: Payout attempts
+    type: simple
+    type_params: {measure: payout_attempts}
+  - name: completed_attempts
+    label: Completed payout attempts
+    type: simple
+    type_params: {measure: completed_attempts}
+  - name: failed_attempts
+    label: Failed payout attempts
+    type: simple
+    type_params: {measure: failed_attempts}
+  - name: stuck_attempts
+    label: Stuck payout attempts
+    type: simple
+    type_params: {measure: stuck_attempts}
+  - name: retry_attempts
+    label: Retry payout attempts
+    type: simple
+    type_params: {measure: retry_attempts}
+  - name: completion_rate
+    label: Payout completion rate
+    type: ratio
+    type_params: {numerator: completed_attempts, denominator: payout_attempts}
+  - name: payout_failure_rate
+    label: Payout failure rate
+    type: ratio
+    type_params: {numerator: failed_attempts, denominator: payout_attempts}
+  - name: stuck_rate
+    label: Payout stuck rate
+    type: ratio
+    type_params: {numerator: stuck_attempts, denominator: payout_attempts}
+  - name: retry_rate
+    label: Payout retry rate
+    type: ratio
+    type_params: {numerator: retry_attempts, denominator: payout_attempts}
+  - name: minutes_completed_sum
+    label: Minutes to complete (sum)
+    type: simple
+    type_params: {measure: minutes_completed_sum}
+  - name: minutes_completed_count
+    label: Completed attempts with duration
+    type: simple
+    type_params: {measure: minutes_completed_count}
+  - name: avg_minutes_to_complete
+    label: Average minutes to complete
+    type: ratio
+    type_params: {numerator: minutes_completed_sum, denominator: minutes_completed_count}
+  - name: median_minutes_to_complete
+    label: Median minutes to complete
+    type: simple
+    type_params: {measure: median_minutes_to_complete}
+  - name: avg_minutes_payment_to_payout
+    label: Average minutes from payment to completed payout
+    type: ratio
+    type_params: {numerator: minutes_to_complete_sum, denominator: completed_payout_transfers}
+  - name: minutes_to_complete_sum
+    label: Minutes payment to payout (sum)
+    type: simple
+    type_params: {measure: minutes_to_complete_sum}
+  - name: completed_payout_transfers
+    label: Transfers with completed payout
+    type: simple
+    type_params: {measure: completed_payout_transfers}
+
+  # ---------------------------------------------------------------- customers
+  - name: new_senders
+    label: New senders
+    description: "Users whose first successful payment falls in the period."
+    type: simple
+    type_params: {measure: new_senders}
+  - name: repeat_senders
+    label: Repeat senders
+    type: simple
+    type_params: {measure: repeat_senders}
+  - name: returning_senders
+    label: Returning senders
+    description: "Active senders minus new senders in the same period."
+    type: derived
+    type_params:
+      expr: active_senders - new_senders
+      metrics: [active_senders, new_senders]
+  - name: repeat_rate
+    label: Repeat rate
+    description: "Users with two or more successful payments / users with a successful payment, by first payment date."
+    type: ratio
+    type_params: {numerator: repeat_senders, denominator: new_senders}
+  - name: transfers_per_sender
+    label: Transfers per active sender
+    type: ratio
+    type_params: {numerator: transfers_count, denominator: active_senders}
+
+  # ---------------------------------------------------------------- risk
+  - name: disputed_payments
+    label: Disputed payments
+    type: simple
+    type_params: {measure: disputed_payments}
+  - name: disputed_amount_usd
+    label: Disputed amount (USD)
+    type: simple
+    type_params: {measure: disputed_amount_usd}
+  - name: dispute_rate
+    label: Dispute rate
+    description: "Disputed or charged back / successful payments (approximation: the source merges both)."
+    type: ratio
+    type_params: {numerator: disputed_payments, denominator: successful_payments}
+  - name: disputed_share_of_tpv
+    label: Disputed share of TPV
+    type: ratio
+    type_params: {numerator: disputed_amount_usd, denominator: successful_amount_usd}
+  - name: fraud_failed_payments
+    label: Payments failed for fraud risk
+    type: simple
+    type_params: {measure: failed_payments}
+    filter: |
+      {{ Dimension('payment_status__failure_category') }} = 'FRAUD_RISK'
+  - name: fraud_failure_rate
+    label: Fraud failure rate
+    type: ratio
+    type_params: {numerator: fraud_failed_payments, denominator: payments_count}
