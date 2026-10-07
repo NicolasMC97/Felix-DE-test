@@ -1,0 +1,216 @@
+version: 2
+
+models:
+  - name: mart_finance_daily
+    description: "Finance KPIs per payment creation day, corridor and payment method. Only successful payments. Grain: date_day + corridor_name + payment_method."
+    columns:
+      - name: date_day
+        description: "Payment creation date (UTC)."
+        data_tests:
+          - not_null
+      - name: corridor_name
+        description: "Corridor label, country-currency."
+        data_tests:
+          - not_null
+      - name: country_code
+        description: "Destination country, ISO alpha-2."
+      - name: country_name
+        description: "Destination country name."
+      - name: currency_code
+        description: "Destination currency."
+      - name: payment_method
+        description: "Payment method."
+        data_tests:
+          - not_null
+      - name: payment_method_category
+        description: "Method category."
+      - name: transfers_count
+        description: "Number of successful transfers."
+      - name: active_senders
+        description: "Distinct senders in the group. Not additive across groups."
+      - name: tpv_usd
+        description: "Total payment volume in USD (amount charged to senders)."
+      - name: principal_usd
+        description: "Principal sent in USD, excluding fees."
+      - name: fee_revenue_usd
+        description: "Fee revenue in USD."
+      - name: promotion_cost_usd
+        description: "Promotional bonus given to beneficiaries in USD."
+      - name: net_revenue_usd
+        description: "Fee revenue minus promotion cost."
+      - name: take_rate
+        description: "Fee revenue divided by TPV."
+      - name: avg_ticket_usd
+        description: "TPV divided by transfers."
+
+  - name: mart_payment_conversion
+    description: "Payment conversion per creation day and payment method, with failures split by category. Grain: date_day + payment_method."
+    columns:
+      - name: date_day
+        description: "Payment creation date (UTC)."
+        data_tests:
+          - not_null
+      - name: payment_method
+        description: "Payment method."
+        data_tests:
+          - not_null
+      - name: payment_method_category
+        description: "Method category."
+      - name: payments_count
+        description: "Payments attempted."
+      - name: successful_count
+        description: "Successful payments."
+      - name: failed_count
+        description: "Failed payments."
+      - name: refunded_count
+        description: "Refunded payments."
+      - name: success_rate
+        description: "Successful payments divided by payments attempted."
+      - name: refund_rate
+        description: "Refunded payments divided by payments attempted."
+      - name: attempted_amount_usd
+        description: "Amount of all payments in USD."
+      - name: successful_amount_usd
+        description: "Amount of successful payments in USD."
+      - name: failed_insufficient_funds_count
+        description: "Failed payments due to insufficient funds."
+      - name: failed_fraud_risk_count
+        description: "Failed payments due to fraud risk."
+      - name: failed_authentication_count
+        description: "Failed payments due to 3DS authentication."
+      - name: failed_invalid_card_count
+        description: "Failed payments due to invalid card."
+      - name: failed_provider_or_bank_count
+        description: "Failed payments due to provider or bank."
+      - name: failed_invalid_request_count
+        description: "Failed payments due to invalid request."
+      - name: failed_other_count
+        description: "Failed payments with an unknown or unmapped reason."
+
+  - name: mart_payout_performance
+    description: "Payout performance per disbursement creation day, provider and corridor. Counts attempts, not payments. Grain: date_day + provider + corridor_name."
+    columns:
+      - name: date_day
+        description: "Disbursement creation date (UTC)."
+        data_tests:
+          - not_null
+      - name: provider
+        description: "Payout provider."
+        data_tests:
+          - not_null
+      - name: corridor_name
+        description: "Corridor label."
+        data_tests:
+          - not_null
+      - name: country_code
+        description: "Destination country."
+      - name: country_name
+        description: "Destination country name."
+      - name: currency_code
+        description: "Destination currency."
+      - name: attempts_count
+        description: "Payout attempts."
+      - name: completed_count
+        description: "Completed attempts."
+      - name: failed_count
+        description: "Failed attempts."
+      - name: cancelled_count
+        description: "Cancelled attempts."
+      - name: in_progress_count
+        description: "Attempts still in progress."
+      - name: on_hold_count
+        description: "Attempts on hold."
+      - name: completion_rate
+        description: "Completed attempts divided by attempts."
+      - name: retry_attempts_count
+        description: "Attempts that are a retry (attempt_number greater than 1)."
+      - name: retry_rate
+        description: "Retry attempts divided by attempts."
+      - name: avg_minutes_to_complete
+        description: "Average minutes from creation to last update, completed attempts with a valid updated_at."
+      - name: median_minutes_to_complete
+        description: "Approximate median of the same measure."
+
+  - name: mart_user_cohorts
+    description: "Monthly retention by acquisition cohort (month of the first successful payment). Grain: cohort_month + activity_month."
+    columns:
+      - name: cohort_month
+        description: "Month of the first successful payment."
+        data_tests:
+          - not_null
+      - name: activity_month
+        description: "Month of the activity."
+        data_tests:
+          - not_null
+      - name: months_since_cohort
+        description: "Months between cohort and activity (0 = acquisition month)."
+      - name: cohort_users
+        description: "Users in the cohort."
+      - name: active_users
+        description: "Cohort users with a successful payment in the activity month."
+      - name: retention_rate
+        description: "Active users divided by cohort users."
+      - name: transfers_count
+        description: "Successful payments in the month."
+      - name: tpv_usd
+        description: "TPV in the month in USD."
+      - name: tpv_per_cohort_user_usd
+        description: "TPV divided by cohort users."
+
+  - name: mart_risk
+    description: "Risk indicators per creation month and payment method. Grain: payment_month + payment_method."
+    columns:
+      - name: payment_month
+        description: "Month of payment creation."
+        data_tests:
+          - not_null
+      - name: payment_method
+        description: "Payment method."
+        data_tests:
+          - not_null
+      - name: payments_count
+        description: "Payments attempted."
+      - name: successful_count
+        description: "Successful payments."
+      - name: disputed_count
+        description: "Payments with a dispute or chargeback."
+      - name: disputed_amount_usd
+        description: "Amount of disputed payments in USD."
+      - name: dispute_rate
+        description: "Disputed payments divided by successful payments."
+      - name: refunded_count
+        description: "Refunded payments."
+      - name: refund_rate
+        description: "Refunded divided by successful plus refunded payments."
+      - name: fraud_failed_count
+        description: "Failed payments due to fraud risk."
+      - name: fraud_failure_rate
+        description: "Fraud-related failures divided by payments attempted."
+
+  - name: mart_data_quality
+    description: "Data quality monitor. One row per month, check and issue type, with the share of affected records. Grain: month + check_name + issue_type."
+    columns:
+      - name: month
+        description: "Creation month of the affected records."
+        data_tests:
+          - not_null
+      - name: check_name
+        description: "AMOUNT_MISMATCH, RECEIPT_WITHOUT_DISBURSEMENT, FAILED_PAYMENT_WITH_RECEIPT, SUCCESSFUL_PAYMENT_WITHOUT_RECEIPT or DISBURSEMENT_TIMESTAMPS."
+        data_tests:
+          - not_null
+      - name: issue_type
+        description: "Issue subtype within the check."
+        data_tests:
+          - not_null
+      - name: population
+        description: "Records the percentage is measured against: TRANSFERS, SUCCESSFUL_PAYMENTS or DISBURSEMENTS."
+      - name: affected_records
+        description: "Records with the issue."
+      - name: total_records
+        description: "Records in the population for the month."
+      - name: affected_pct
+        description: "Affected records divided by total records."
+      - name: net_diff_usd
+        description: "Net amount involved in USD (difference for amount mismatches, payment amount otherwise)."
+      - name: abs_diff_usd
+        description: "Absolute amount involved in USD."

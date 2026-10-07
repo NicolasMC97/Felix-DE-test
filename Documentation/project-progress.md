@@ -5,8 +5,9 @@ Take-home assessment for the Data Engineering Manager role at Félix. A remittan
 Contents:
 1. [Infrastructure as Code](#1-infrastructure-as-code-iac_google)
 2. [Dataset schema definition and initial findings](#2-dataset-schema-definition-and-initial-findings)
-3. [dbt models and first tests](#3-dbt-models-and-first-tests-dbt)
-4. [Pending work](#4-pending-work)
+3. [dbt staging models and tests](#3-dbt-staging-models-and-tests-dbt)
+4. [Data model: transformations, dimensions, facts and marts](#4-data-model-transformations-dimensions-facts-and-marts)
+5. [Pending work](#5-pending-work)
 
 ---
 
@@ -110,12 +111,12 @@ Retries matter: summing all receipts of a payment double counts money. Metrics m
 
 ---
 
-## 3. dbt models and first tests (`DBT/`)
+## 3. dbt staging models and tests (`DBT/`)
 
 ### Sources and profile
 
 - **Sources** (`models/srcs/_sources.yml`): `remittances.payments`, `.disbursements` and `.receipts`, pointing to `felix-technical-test.felix_dataset`. Column descriptions are generated from the Terraform JSON schemas. `id` has `unique` and `not_null` tests.
-- **Profile**: `~/.dbt/profiles.yml` (outside the repo), BigQuery with a service account, target dataset `dbt_felix`, location `US`. `dbt debug` passes.
+- **Profile**: `~/.dbt/profiles.yml` (outside the repo), BigQuery with a service account, target `dev` with dataset `dbt_dev_local`, location `US`. `dbt debug` passes.
 
 ### Staging models (`models/staging/`, materialized as views)
 
@@ -131,7 +132,7 @@ Retries matter: summing all receipts of a payment double counts money. Metrics m
 
 ### Tests
 
-**Generic tests** (`_stg_remittances__models.yml`): `unique` and `not_null` on keys, `accepted_values` on status, method, country and currency, and `relationships` receipts → payments (error) and receipts → disbursements (warn). Known data issues use `severity: warn`.
+**Generic tests** (`models/staging/_models.yml`): `unique` and `not_null` on keys, `accepted_values` on status, method, country and currency, and `relationships` receipts → payments (error) and receipts → disbursements (warn). Known data issues use `severity: warn`.
 
 **Singular tests** (`tests/`):
 
@@ -141,19 +142,59 @@ Retries matter: summing all receipts of a payment double counts money. Metrics m
 | `assert_receipts_amounts_valid` | principal and rate > 0, fee and promotion ≥ 0 | error |
 | `assert_payment_amount_matches_receipt` | payment = charged + fee for single-receipt payments | warn |
 
-### First run
+### Staging test results
 
-`dbt build --select staging`: 3 models, 48 tests → **43 passed, 4 warnings, 4 errors**.
-
-- **Warnings** are the known data issues (findings 6, 7, 9, 10).
-- **Errors** share one cause: the external tables still used `autodetect`, which inferred `INT64` for `amount_charged` and `promotion_amount`. The explicit schemas fix this once Terraform is applied.
+`dbt build --select staging` on the full data: 3 models, 48 tests, all passing except known source data issues, which are `warn`: negative payment amount, null `amount_local` and `destination_country_code` in disbursements, 185 receipts with a missing disbursement and payment amounts that do not match the receipt. The explicit schemas applied through Terraform fixed the earlier type errors (`INT64` inferred for decimal amounts). Detail and decisions per test: [dbt-tests.md](dbt-tests.md).
 
 ---
 
-## 4. Pending work
+## 4. Data model: transformations, dimensions, facts and marts
 
-1. Copy the full CSVs to `IAC_google/files/`, `terraform apply` (recreates the 3 external tables with explicit schemas), then re-run `dbt build --select staging`.
-2. Validate the status mapping and open questions (findings 2, 3, 5, 11).
-3. Intermediate layer: payment ↔ receipt ↔ disbursement joined by business context, handling retries.
-4. Marts for the requested metrics: total amount by month, users making up 50% of volume, recurring customers, providers by failed disbursements, beneficiary clusters, chargeback rate.
-5. Materialize heavy models as tables: the raw layer is external tables, so each query re-reads the CSVs from GCS.
+Star schema built on the staging layer. Full description of every step: [data-modeling.md](data-modeling.md). Relationship checks that drove the design: [data-relationship-validation.md](data-relationship-validation.md).
+
+![Dimensional model](dimensional-model.svg)
+
+### What was built
+
+| Layer | Folder | Models |
+|---|---|---|
+| Transformations | `models/transformations/` | `trf_payment_receipts` (one row per payout attempt), `trf_transfers` (one row per payment with receipt, money from the last receipt), `trf_user_activity` (one row per sender) |
+| Dimensions | `models/dim/` | `dim_date`, `dim_corridor`, `dim_payment_method`, `dim_payment_status`, `dim_disbursement_status`, `dim_payout_provider`, `dim_user` |
+| Facts | `models/fact/` | `fct_payments` (payment), `fct_disbursements` (payout attempt), `fct_transfers` (payment with receipt, accumulating snapshot) |
+| Marts | `models/mart/` | `mart_finance_daily`, `mart_payment_conversion`, `mart_payout_performance`, `mart_user_cohorts`, `mart_risk`, `mart_data_quality` |
+
+Transformations, dimensions, facts and marts are materialized as tables; staging stays as views. Shared macros: `generate_surrogate_key` and `date_key`.
+
+### Key decisions
+
+- **Retries and money.** A payment can have several receipts and every retry repeats the full amount, so summing receipts overstates TPV by about 3.1%. Money is read from the payment and the last receipt only (`fct_transfers`); payout metrics are read per attempt (`fct_disbursements`).
+- **Amount rule.** `payment amount = amount_charged + fee` fails for 957 payments (0.13%), mostly a fee not recorded in the receipt (731, +2,687 USD). They stay in the facts with `has_amount_mismatch` and `amount_mismatch_type` and are monitored in `mart_data_quality`, not corrected.
+- **Broken and missing links.** Receipts with a missing disbursement are kept with a left join; 1,961 successful payments without receipt are flagged `is_payout_not_created`.
+- **No `dim_state`.** `location_of_request_state_code` is filled in 0.05% of payments (CASH 37%, ACH 2%, card 0%) and has dirty values, so it stays as a degenerate attribute.
+- **SCD.** All dimensions are Type 1. The data is a static extract with no attribute history, so snapshots (Type 2) would never record a change. They are documented as the recommendation for a live pipeline.
+
+### Results
+
+TPV of successful transfers 237.69M USD, fee revenue 2.90M USD (take rate 1.22%), 722,091 successful transfers, 421,412 senders. Latest full `dbt build`: all models and tests of this layer pass; the only error comes from the dbt starter models in `models/example/`.
+
+### How the requested metrics map to the marts
+
+| Metric | Where |
+|---|---|
+| Total amount by month | `mart_finance_daily`, summed by month |
+| Recurring customers | `dim_user.is_repeat_user` and `mart_user_cohorts` |
+| Providers by failed disbursements | `mart_payout_performance` |
+| Chargeback rate | `mart_risk` (approximation, disputes and chargebacks are merged in the source) |
+| Users making up 50% of volume | not built yet, see pending work |
+| Beneficiary clusters | not built; each beneficiary belongs to a single user (finding 5) |
+
+---
+
+## 5. Pending work
+
+1. Delete the dbt starter models in `models/example/`: `my_first_dbt_model` fails its `not_null` test and breaks `dbt build`.
+2. Build the mart for the users that make up 50% of the volume (cumulative share of TPV by user, from `dim_user`).
+3. Confirm the business rule behind the 957 amount mismatches and the open questions: status mapping assumptions (`TRANSMITTED`, `WIRE_RELEASED`, `WIRE_CONFIRMED` as in progress, `REJECTED` as failed), findings 2, 3, 5 and 11.
+4. Staging models are views over external tables, so every query re-reads the CSVs from GCS. Materialize them as tables if query cost or latency matters.
+5. `dim_date` has a fixed range (2026-01-01 to 2026-12-31); extend it or derive it from staging if new data arrives.
+6. For a live pipeline: add the two snapshots described in data-modeling.md (user activity segment and disbursement status), incremental loads and scheduling.

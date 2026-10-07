@@ -1,0 +1,183 @@
+version: 2
+
+models:
+  - name: dim_date
+    description: "Calendar dimension, one row per day from 2026-01-01 to 2026-12-31. Covers all created_at / updated_at dates in payments, disbursements and receipts."
+    columns:
+      - name: date_key
+        description: "Surrogate key in yyyymmdd format."
+        data_tests:
+          - unique
+          - not_null
+      - name: date_day
+        description: "Calendar date."
+        data_tests:
+          - unique
+          - not_null
+      - name: year
+        description: "Calendar year."
+      - name: quarter
+        description: "Calendar quarter (1-4)."
+      - name: month
+        description: "Month number (1-12)."
+      - name: month_name
+        description: "Month name in English."
+      - name: month_start_date
+        description: "First day of the month."
+      - name: year_month
+        description: "Year and month as YYYY-MM."
+      - name: week_of_year
+        description: "ISO week number."
+      - name: week_start_date
+        description: "Monday of the ISO week."
+      - name: day_of_month
+        description: "Day of the month (1-31)."
+      - name: day_of_week
+        description: "ISO day of week, 1 = Monday to 7 = Sunday."
+      - name: day_name
+        description: "Day name in English."
+      - name: is_weekend
+        description: "True for Saturday and Sunday."
+      - name: is_month_end
+        description: "True on the last day of the month."
+
+  - name: dim_corridor
+    description: "Remittance corridors: one row per destination country + currency pair. The same country can appear with its local currency and with USD."
+    columns:
+      - name: corridor_key
+        description: "Surrogate key (hash of country_code and currency_code)."
+        data_tests:
+          - unique
+          - not_null
+      - name: country_code
+        description: "Destination country, ISO 3166-1 alpha-2."
+        data_tests:
+          - not_null
+      - name: country_name
+        description: "Country name. 'Unknown' flags a country not yet mapped."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Mexico', 'Guatemala', 'Honduras', 'El Salvador', 'Nicaragua', 'Costa Rica', 'Dominican Republic', 'Colombia', 'Ecuador', 'Peru', 'Brazil']
+              config:
+                severity: warn
+      - name: subregion
+        description: "North America, Central America, Caribbean or South America."
+      - name: currency_code
+        description: "Currency the beneficiary receives, ISO 4217."
+        data_tests:
+          - not_null
+      - name: is_usd_destination
+        description: "True when the beneficiary receives USD (dollarized destinations, exchange rate 1)."
+      - name: corridor_name
+        description: "Readable corridor label, country-currency (e.g. MX-MXN)."
+
+  - name: dim_payment_method
+    description: "Payment methods used by the sender."
+    columns:
+      - name: payment_method_key
+        description: "Surrogate key (hash of payment_method)."
+        data_tests:
+          - unique
+          - not_null
+      - name: payment_method
+        description: "CARD, APPLE_PAY, CASH, WALLET_POC, ACH or UNKNOWN (1 payment with null type)."
+        data_tests:
+          - unique
+          - not_null
+      - name: payment_method_category
+        description: "CARD, DIGITAL_WALLET, CASH, BANK_TRANSFER or UNKNOWN."
+      - name: reports_request_state
+        description: "True for methods that can report the US state of the request (CASH, ACH). Even for them completeness is low."
+
+  - name: dim_payment_status
+    description: "Payment status and detailed status, with a failure category to analyse why payments fail."
+    columns:
+      - name: payment_status_key
+        description: "Surrogate key (hash of status and detailed status)."
+        data_tests:
+          - unique
+          - not_null
+      - name: payment_status
+        description: "SUCCESSFUL, FAILED, REFUNDED, PENDING_USER_ACTION or STARTED."
+        data_tests:
+          - not_null
+      - name: payment_status_detail
+        description: "Granular status or failure reason. NONE when the source is null."
+        data_tests:
+          - not_null
+      - name: failure_category
+        description: "Grouping of failure reasons: INSUFFICIENT_FUNDS, FRAUD_RISK, AUTHENTICATION, INVALID_CARD, PROVIDER_OR_BANK, INVALID_REQUEST or UNKNOWN_REASON (source reason is already unmapped). Null for non-failed payments. OTHER is never expected and flags a new reason missing from this mapping."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['INSUFFICIENT_FUNDS', 'FRAUD_RISK', 'AUTHENTICATION', 'INVALID_CARD', 'PROVIDER_OR_BANK', 'INVALID_REQUEST', 'UNKNOWN_REASON']
+              config:
+                severity: warn
+
+  - name: dim_disbursement_status
+    description: "Normalized payout statuses and their group."
+    columns:
+      - name: disbursement_status_key
+        description: "Surrogate key (hash of disbursement_status)."
+        data_tests:
+          - unique
+          - not_null
+      - name: disbursement_status
+        description: "Normalized (uppercase) payout status."
+        data_tests:
+          - not_null
+      - name: status_group
+        description: "COMPLETED, FAILED, CANCELLED, IN_PROGRESS, ON_HOLD or UNMAPPED."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['COMPLETED', 'FAILED', 'CANCELLED', 'IN_PROGRESS', 'ON_HOLD']
+              config:
+                severity: warn
+      - name: is_final
+        description: "True when the group is a final state (COMPLETED, FAILED, CANCELLED)."
+
+  - name: dim_payout_provider
+    description: "Payout provider + payer (paying institution at destination) + payout method."
+    columns:
+      - name: payout_provider_key
+        description: "Surrogate key (hash of provider, payer and payout method)."
+        data_tests:
+          - unique
+          - not_null
+      - name: provider
+        description: "Payout provider/integration (PROVIDER 1..12)."
+        data_tests:
+          - not_null
+      - name: payer_name
+        description: "Paying institution at destination, anonymized as DESTINATION_n."
+        data_tests:
+          - not_null
+      - name: disbursement_method
+        description: "BANK, CASH, WALLET or CASH DELIVERY."
+
+  - name: dim_user
+    description: "Sender dimension, one row per user. Attributes are derived from payment activity because the source has no user attributes. Modeled as SCD Type 1."
+    columns:
+      - name: user_id
+        description: "Sender user identifier, primary key."
+        data_tests:
+          - unique
+          - not_null
+      - name: first_payment_date
+        description: "Date of the first payment, any status."
+      - name: first_successful_payment_date
+        description: "Date of the first successful payment. Null when the user never completed a payment."
+      - name: cohort_month
+        description: "Month of the first successful payment, used for cohort analysis."
+      - name: has_successful_payment
+        description: "True when the user has at least one successful payment."
+      - name: is_repeat_user
+        description: "True when the user has two or more successful payments."
+      - name: payments_count
+        description: "Total payments, any status."
+      - name: successful_payments_count
+        description: "Payments with status SUCCESSFUL."
+      - name: lifetime_tpv_usd
+        description: "Sum of amount_usd of successful payments."

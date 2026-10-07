@@ -1,0 +1,96 @@
+version: 2
+
+models:
+  - name: trf_payment_receipts
+    description: "One row per receipt (payout attempt) enriched with its disbursement. Adds attempt_number, attempts_count and is_last_attempt. Disbursement is a left join: some receipts point to a disbursement missing in the source."
+    columns:
+      - name: receipt_id
+        description: "Unique receipt identifier."
+        data_tests:
+          - unique
+          - not_null
+      - name: payment_id
+        description: "Foreign key to the payment."
+        data_tests:
+          - not_null
+      - name: disbursement_id
+        description: "Foreign key to the disbursement. Unique per receipt."
+        data_tests:
+          - unique
+          - not_null
+      - name: attempt_number
+        description: "Order of the attempt within the payment, 1 = first, by receipt creation time."
+        data_tests:
+          - not_null
+      - name: attempts_count
+        description: "Total attempts (receipts) of the payment."
+      - name: is_last_attempt
+        description: "True for the most recent attempt of the payment. Money metrics use only this row."
+      - name: has_disbursement
+        description: "False when the disbursement_id does not exist in the disbursements source (185 known cases)."
+      - name: disbursement_status_group
+        description: "Normalized payout status group (COMPLETED, FAILED, CANCELLED, IN_PROGRESS, ON_HOLD, UNMAPPED). Null when there is no disbursement."
+
+  - name: trf_transfers
+    description: "One row per payment with at least one receipt. Money comes from the payment and the last receipt only, since every retry repeats the full amount. Includes amount reconciliation columns and the final payout status."
+    columns:
+      - name: payment_id
+        description: "Unique payment identifier, grain of the model."
+        data_tests:
+          - unique
+          - not_null
+      - name: user_id
+        description: "Sender user identifier."
+        data_tests:
+          - not_null
+      - name: payment_status
+        description: "Payment status."
+      - name: attempts_count
+        description: "Number of payout attempts. Greater than 1 means the payout was retried."
+        data_tests:
+          - not_null
+      - name: payout_status_group
+        description: "Normalized status of the last payout attempt. Null when the disbursement is missing."
+      - name: payment_amount_usd
+        description: "Amount charged to the sender in the payment."
+      - name: expected_amount_usd
+        description: "amount_charged_usd + fee_usd of the last receipt."
+      - name: amount_diff_usd
+        description: "payment_amount_usd minus expected_amount_usd, rounded to cents."
+      - name: has_amount_mismatch
+        description: "True when the payment amount does not match amount_charged + fee (difference of 1 cent or more)."
+        data_tests:
+          - not_null
+      - name: amount_mismatch_type
+        description: "FEE_NOT_RECORDED (payment higher and receipt fee is 0), RECEIPT_HIGHER, NEGATIVE_OR_ZERO_AMOUNT or OTHER. Null when the amounts match."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['FEE_NOT_RECORDED', 'RECEIPT_HIGHER', 'NEGATIVE_OR_ZERO_AMOUNT', 'OTHER']
+      - name: payout_completed_at
+        description: "Last update of the disbursement when the payout is COMPLETED."
+      - name: minutes_to_complete
+        description: "Minutes between payment creation and payout completion. Only for completed payouts."
+
+  - name: trf_user_activity
+    description: "One row per sender with lifetime activity, base for dim_user and the cohort mart."
+    columns:
+      - name: user_id
+        description: "Sender user identifier."
+        data_tests:
+          - unique
+          - not_null
+      - name: first_payment_at
+        description: "Creation time of the first payment, any status."
+        data_tests:
+          - not_null
+      - name: first_successful_payment_at
+        description: "Creation time of the first successful payment. Null for users with no successful payment."
+      - name: last_successful_payment_at
+        description: "Creation time of the latest successful payment."
+      - name: payments_count
+        description: "Total payments of the user, any status."
+      - name: successful_payments_count
+        description: "Payments with status SUCCESSFUL."
+      - name: lifetime_tpv_usd
+        description: "Sum of amount_usd of successful payments."

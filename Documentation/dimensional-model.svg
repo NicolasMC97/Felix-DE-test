@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1470 900" width="1470" height="900" role="img" aria-label="Dimensional model: facts and dimensions">
+<style>text{font-family:Inter,"Helvetica Neue",Helvetica,Arial,sans-serif}.title{font-size:20px;font-weight:700;fill:#0F172A}.h{font-size:14px;font-weight:700;fill:#FFFFFF}.tag{font-size:10px;font-weight:700;fill:#FFFFFF;opacity:.85}.c{font-size:12px;fill:#0F172A}.pk{font-size:10px;font-weight:700;fill:#B45309}.fk{font-size:10px;font-weight:700;fill:#2563EB}.leg{font-size:12px;fill:#475569}</style>
+<rect width="1470" height="900" rx="16" fill="#F8FAFC"/>
+<text x="40" y="22" class="title" style="display:none">Dimensional model</text>
+<line x1="170.0" y1="300" x2="170.0" y2="186" stroke="#94A3B8" stroke-width="1.3"/>
+<line x1="170.0" y1="300" x2="735.0" y2="186" stroke="#94A3B8" stroke-width="1.3"/>
+<line x1="170.0" y1="528" x2="170.0" y2="690" stroke="#94A3B8" stroke-width="1.3"/>
+<line x1="170.0" y1="528" x2="540.0" y2="690" stroke="#94A3B8" stroke-width="1.3"/>
+<line x1="735.0" y1="250" x2="170.0" y2="186" stroke="#94A3B8" stroke-width="1.3"/>
+<line x1="735.0" y1="250" x2="735.0" y2="186" stroke="#94A3B8" stroke-width="1.3"/>
+<line x1="735.0" y1="250" x2="1300.0" y2="168" stroke="#94A3B8" stroke-width="1.3"/>
+<line x1="735.0" y1="568" x2="170.0" y2="690" stroke="#94A3B8" stroke-width="1.3"/>
+<line x1="735.0" y1="568" x2="540.0" y2="690" stroke="#94A3B8" stroke-width="1.3"/>
+<line x1="735.0" y1="568" x2="910.0" y2="690" stroke="#94A3B8" stroke-width="1.3"/>
+<line x1="735.0" y1="568" x2="1300.0" y2="690" stroke="#94A3B8" stroke-width="1.3"/>
+<line x1="1300.0" y1="300" x2="170.0" y2="186" stroke="#94A3B8" stroke-width="1.3"/>
+<line x1="1300.0" y1="300" x2="735.0" y2="186" stroke="#94A3B8" stroke-width="1.3"/>
+<line x1="1300.0" y1="300" x2="1300.0" y2="168" stroke="#94A3B8" stroke-width="1.3"/>
+<line x1="1300.0" y1="528" x2="910.0" y2="690" stroke="#94A3B8" stroke-width="1.3"/>
+<line x1="1300.0" y1="528" x2="1300.0" y2="690" stroke="#94A3B8" stroke-width="1.3"/>
+<line x1="300" y1="414.0" x2="605" y2="409.0" stroke="#2563EB" stroke-width="1.6" stroke-dasharray="5 4"/>
+<path d="M170.0,528 L170.0,640 L1300.0,640 L1300.0,528" fill="none" stroke="#2563EB" stroke-width="1.6" stroke-dasharray="5 4"/>
+<rect x="40" y="30" width="260" height="156" rx="10" fill="#F0FDFA" stroke="#0F766E" stroke-width="1.6"/>
+<path d="M40,60 V40 a10,10 0 0 1 10,-10 H290 a10,10 0 0 1 10,10 V60 Z" fill="#0F766E"/>
+<text x="52" y="50" class="h">dim_date</text>
+<text x="288" y="49" text-anchor="end" class="tag">DIM</text>
+<text x="52" y="82" class="pk">PK</text>
+<text x="74" y="82" class="c">date_key</text>
+<text x="74" y="100" class="c">date_day</text>
+<text x="74" y="118" class="c">year, quarter, month</text>
+<text x="74" y="136" class="c">week_of_year</text>
+<text x="74" y="154" class="c">day_of_week, day_name</text>
+<text x="74" y="172" class="c">is_weekend, is_month_end</text>
+<rect x="605" y="30" width="260" height="156" rx="10" fill="#F0FDFA" stroke="#0F766E" stroke-width="1.6"/>
+<path d="M605,60 V40 a10,10 0 0 1 10,-10 H855 a10,10 0 0 1 10,10 V60 Z" fill="#0F766E"/>
+<text x="617" y="50" class="h">dim_user</text>
+<text x="853" y="49" text-anchor="end" class="tag">DIM</text>
+<text x="617" y="82" class="pk">PK</text>
+<text x="639" y="82" class="c">user_id</text>
+<text x="639" y="100" class="c">cohort_month</text>
+<text x="639" y="118" class="c">first_payment_date</text>
+<text x="639" y="136" class="c">has_successful_payment</text>
+<text x="639" y="154" class="c">is_repeat_user</text>
+<text x="639" y="172" class="c">lifetime_tpv_usd</text>
+<rect x="1170" y="30" width="260" height="138" rx="10" fill="#F0FDFA" stroke="#0F766E" stroke-width="1.6"/>
+<path d="M1170,60 V40 a10,10 0 0 1 10,-10 H1420 a10,10 0 0 1 10,10 V60 Z" fill="#0F766E"/>
+<text x="1182" y="50" class="h">dim_corridor</text>
+<text x="1418" y="49" text-anchor="end" class="tag">DIM</text>
+<text x="1182" y="82" class="pk">PK</text>
+<text x="1204" y="82" class="c">corridor_key</text>
+<text x="1204" y="100" class="c">country_code, country_name</text>
+<text x="1204" y="118" class="c">subregion</text>
+<text x="1204" y="136" class="c">currency_code</text>
+<text x="1204" y="154" class="c">is_usd_destination</text>
+<rect x="40" y="690" width="260" height="120" rx="10" fill="#F0FDFA" stroke="#0F766E" stroke-width="1.6"/>
+<path d="M40,720 V700 a10,10 0 0 1 10,-10 H290 a10,10 0 0 1 10,10 V720 Z" fill="#0F766E"/>
+<text x="52" y="710" class="h">dim_payment_method</text>
+<text x="288" y="709" text-anchor="end" class="tag">DIM</text>
+<text x="52" y="742" class="pk">PK</text>
+<text x="74" y="742" class="c">payment_method_key</text>
+<text x="74" y="760" class="c">payment_method</text>
+<text x="74" y="778" class="c">payment_method_category</text>
+<text x="74" y="796" class="c">reports_request_state</text>
+<rect x="410" y="690" width="260" height="120" rx="10" fill="#F0FDFA" stroke="#0F766E" stroke-width="1.6"/>
+<path d="M410,720 V700 a10,10 0 0 1 10,-10 H660 a10,10 0 0 1 10,10 V720 Z" fill="#0F766E"/>
+<text x="422" y="710" class="h">dim_payment_status</text>
+<text x="658" y="709" text-anchor="end" class="tag">DIM</text>
+<text x="422" y="742" class="pk">PK</text>
+<text x="444" y="742" class="c">payment_status_key</text>
+<text x="444" y="760" class="c">payment_status</text>
+<text x="444" y="778" class="c">payment_status_detail</text>
+<text x="444" y="796" class="c">failure_category</text>
+<rect x="780" y="690" width="260" height="120" rx="10" fill="#F0FDFA" stroke="#0F766E" stroke-width="1.6"/>
+<path d="M780,720 V700 a10,10 0 0 1 10,-10 H1030 a10,10 0 0 1 10,10 V720 Z" fill="#0F766E"/>
+<text x="792" y="710" class="h">dim_payout_provider</text>
+<text x="1028" y="709" text-anchor="end" class="tag">DIM</text>
+<text x="792" y="742" class="pk">PK</text>
+<text x="814" y="742" class="c">payout_provider_key</text>
+<text x="814" y="760" class="c">provider</text>
+<text x="814" y="778" class="c">payer_name</text>
+<text x="814" y="796" class="c">disbursement_method</text>
+<rect x="1170" y="690" width="260" height="120" rx="10" fill="#F0FDFA" stroke="#0F766E" stroke-width="1.6"/>
+<path d="M1170,720 V700 a10,10 0 0 1 10,-10 H1420 a10,10 0 0 1 10,10 V720 Z" fill="#0F766E"/>
+<text x="1182" y="710" class="h">dim_disbursement_status</text>
+<text x="1418" y="709" text-anchor="end" class="tag">DIM</text>
+<text x="1182" y="742" class="pk">PK</text>
+<text x="1204" y="742" class="c">disbursement_status_key</text>
+<text x="1204" y="760" class="c">disbursement_status</text>
+<text x="1204" y="778" class="c">status_group</text>
+<text x="1204" y="796" class="c">is_final</text>
+<rect x="40" y="300" width="260" height="228" rx="10" fill="#EEF4FF" stroke="#2563EB" stroke-width="1.6"/>
+<path d="M40,330 V310 a10,10 0 0 1 10,-10 H290 a10,10 0 0 1 10,10 V330 Z" fill="#2563EB"/>
+<text x="52" y="320" class="h">fct_payments</text>
+<text x="288" y="319" text-anchor="end" class="tag">FACT</text>
+<text x="52" y="352" class="pk">PK</text>
+<text x="74" y="352" class="c">payment_id</text>
+<text x="52" y="370" class="fk">FK</text>
+<text x="74" y="370" class="c">user_id</text>
+<text x="52" y="388" class="fk">FK</text>
+<text x="74" y="388" class="c">payment_created_date_key</text>
+<text x="52" y="406" class="fk">FK</text>
+<text x="74" y="406" class="c">payment_method_key</text>
+<text x="52" y="424" class="fk">FK</text>
+<text x="74" y="424" class="c">payment_status_key</text>
+<text x="74" y="442" class="c">amount_usd</text>
+<text x="74" y="460" class="c">is_successful / is_refunded / is_failed</text>
+<text x="74" y="478" class="c">has_dispute_chargeback</text>
+<text x="74" y="496" class="c">has_receipt</text>
+<text x="74" y="514" class="c">is_payout_not_created</text>
+<rect x="605" y="250" width="260" height="318" rx="10" fill="#EEF4FF" stroke="#2563EB" stroke-width="1.6"/>
+<path d="M605,280 V260 a10,10 0 0 1 10,-10 H855 a10,10 0 0 1 10,10 V280 Z" fill="#2563EB"/>
+<text x="617" y="270" class="h">fct_transfers</text>
+<text x="853" y="269" text-anchor="end" class="tag">FACT</text>
+<text x="617" y="302" class="pk">PK</text>
+<text x="639" y="302" class="c">payment_id</text>
+<text x="617" y="320" class="fk">FK</text>
+<text x="639" y="320" class="c">user_id</text>
+<text x="617" y="338" class="fk">FK</text>
+<text x="639" y="338" class="c">payment_created_date_key</text>
+<text x="617" y="356" class="fk">FK</text>
+<text x="639" y="356" class="c">receipt_created_date_key</text>
+<text x="617" y="374" class="fk">FK</text>
+<text x="639" y="374" class="c">payout_completed_date_key</text>
+<text x="617" y="392" class="fk">FK</text>
+<text x="639" y="392" class="c">corridor_key</text>
+<text x="617" y="410" class="fk">FK</text>
+<text x="639" y="410" class="c">payment_method_key</text>
+<text x="617" y="428" class="fk">FK</text>
+<text x="639" y="428" class="c">payment_status_key</text>
+<text x="617" y="446" class="fk">FK</text>
+<text x="639" y="446" class="c">payout_provider_key</text>
+<text x="617" y="464" class="fk">FK</text>
+<text x="639" y="464" class="c">disbursement_status_key</text>
+<text x="639" y="482" class="c">payment_amount_usd</text>
+<text x="639" y="500" class="c">fee_usd, promotion_amount_usd</text>
+<text x="639" y="518" class="c">attempts_count, is_retried</text>
+<text x="639" y="536" class="c">minutes_to_complete</text>
+<text x="639" y="554" class="c">has_amount_mismatch</text>
+<rect x="1170" y="300" width="260" height="228" rx="10" fill="#EEF4FF" stroke="#2563EB" stroke-width="1.6"/>
+<path d="M1170,330 V310 a10,10 0 0 1 10,-10 H1420 a10,10 0 0 1 10,10 V330 Z" fill="#2563EB"/>
+<text x="1182" y="320" class="h">fct_disbursements</text>
+<text x="1418" y="319" text-anchor="end" class="tag">FACT</text>
+<text x="1182" y="352" class="pk">PK</text>
+<text x="1204" y="352" class="c">disbursement_id</text>
+<text x="1182" y="370" class="fk">FK</text>
+<text x="1204" y="370" class="c">payment_id</text>
+<text x="1182" y="388" class="fk">FK</text>
+<text x="1204" y="388" class="c">user_id</text>
+<text x="1182" y="406" class="fk">FK</text>
+<text x="1204" y="406" class="c">disbursement_created_date_key</text>
+<text x="1182" y="424" class="fk">FK</text>
+<text x="1204" y="424" class="c">corridor_key</text>
+<text x="1182" y="442" class="fk">FK</text>
+<text x="1204" y="442" class="c">payout_provider_key</text>
+<text x="1182" y="460" class="fk">FK</text>
+<text x="1204" y="460" class="c">disbursement_status_key</text>
+<text x="1204" y="478" class="c">amount_local</text>
+<text x="1204" y="496" class="c">attempt_number, is_last_attempt</text>
+<text x="1204" y="514" class="c">minutes_since_creation</text>
+<text x="40" y="838" class="leg">Grey line: fact to dimension (foreign key). Dashed blue line: fact to fact (payment_id).</text>
+<text x="40" y="856" class="leg">fct_transfers uses dim_date three times: payment created, receipt created and payout completed.</text>
+<text x="40" y="874" class="leg">Grain: fct_payments = payment, fct_transfers = payment with receipt (accumulating snapshot), fct_disbursements = payout attempt.</text>
+</svg>
