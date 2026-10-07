@@ -23,7 +23,7 @@
 <rect x="40" y="30" width="260" height="156" rx="10" fill="#F0FDFA" stroke="#0F766E" stroke-width="1.6"/>
 <path d="M40,60 V40 a10,10 0 0 1 10,-10 H290 a10,10 0 0 1 10,10 V60 Z" fill="#0F766E"/>
 <text x="52" y="50" class="h">dim_date</text>
-<text x="288" y="49" text-anchor="end" class="tag">DIMENSION</text>
+<text x="288" y="49" text-anchor="end" class="tag">DIM</text>
 <text x="52" y="82" class="pk">PK</text>
 <text x="74" y="82" class="c">date_key</text>
 <text x="74" y="100" class="c">date_day</text>
@@ -34,7 +34,7 @@
 <rect x="605" y="30" width="260" height="156" rx="10" fill="#F0FDFA" stroke="#0F766E" stroke-width="1.6"/>
 <path d="M605,60 V40 a10,10 0 0 1 10,-10 H855 a10,10 0 0 1 10,10 V60 Z" fill="#0F766E"/>
 <text x="617" y="50" class="h">dim_user</text>
-<text x="853" y="49" text-anchor="end" class="tag">DIMENSION</text>
+<text x="853" y="49" text-anchor="end" class="tag">DIM</text>
 <text x="617" y="82" class="pk">PK</text>
 <text x="639" y="82" class="c">user_id</text>
 <text x="639" y="100" class="c">cohort_month</text>
@@ -45,7 +45,7 @@
 <rect x="1170" y="30" width="260" height="138" rx="10" fill="#F0FDFA" stroke="#0F766E" stroke-width="1.6"/>
 <path d="M1170,60 V40 a10,10 0 0 1 10,-10 H1420 a10,10 0 0 1 10,10 V60 Z" fill="#0F766E"/>
 <text x="1182" y="50" class="h">dim_corridor</text>
-<text x="1418" y="49" text-anchor="end" class="tag">DIMENSION</text>
+<text x="1418" y="49" text-anchor="end" class="tag">DIM</text>
 <text x="1182" y="82" class="pk">PK</text>
 <text x="1204" y="82" class="c">corridor_key</text>
 <text x="1204" y="100" class="c">country_code, country_name</text>
@@ -55,7 +55,7 @@
 <rect x="40" y="690" width="260" height="120" rx="10" fill="#F0FDFA" stroke="#0F766E" stroke-width="1.6"/>
 <path d="M40,720 V700 a10,10 0 0 1 10,-10 H290 a10,10 0 0 1 10,10 V720 Z" fill="#0F766E"/>
 <text x="52" y="710" class="h">dim_payment_method</text>
-<text x="288" y="709" text-anchor="end" class="tag">DIMENSION</text>
+<text x="288" y="709" text-anchor="end" class="tag">DIM</text>
 <text x="52" y="742" class="pk">PK</text>
 <text x="74" y="742" class="c">payment_method_key</text>
 <text x="74" y="760" class="c">payment_method</text>
@@ -64,7 +64,7 @@
 <rect x="410" y="690" width="260" height="120" rx="10" fill="#F0FDFA" stroke="#0F766E" stroke-width="1.6"/>
 <path d="M410,720 V700 a10,10 0 0 1 10,-10 H660 a10,10 0 0 1 10,10 V720 Z" fill="#0F766E"/>
 <text x="422" y="710" class="h">dim_payment_status</text>
-<text x="658" y="709" text-anchor="end" class="tag">DIMENSION</text>
+<text x="658" y="709" text-anchor="end" class="tag">DIM</text>
 <text x="422" y="742" class="pk">PK</text>
 <text x="444" y="742" class="c">payment_status_key</text>
 <text x="444" y="760" class="c">payment_status</text>
@@ -73,7 +73,7 @@
 <rect x="780" y="690" width="260" height="120" rx="10" fill="#F0FDFA" stroke="#0F766E" stroke-width="1.6"/>
 <path d="M780,720 V700 a10,10 0 0 1 10,-10 H1030 a10,10 0 0 1 10,10 V720 Z" fill="#0F766E"/>
 <text x="792" y="710" class="h">dim_payout_provider</text>
-<text x="1028" y="709" text-anchor="end" class="tag">DIMENSION</text>
+<text x="1028" y="709" text-anchor="end" class="tag">DIM</text>
 <text x="792" y="742" class="pk">PK</text>
 <text x="814" y="742" class="c">payout_provider_key</text>
 <text x="814" y="760" class="c">provider</text>
@@ -82,7 +82,7 @@
 <rect x="1170" y="690" width="260" height="120" rx="10" fill="#F0FDFA" stroke="#0F766E" stroke-width="1.6"/>
 <path d="M1170,720 V700 a10,10 0 0 1 10,-10 H1420 a10,10 0 0 1 10,10 V720 Z" fill="#0F766E"/>
 <text x="1182" y="710" class="h">dim_disbursement_status</text>
-<text x="1418" y="709" text-anchor="end" class="tag">DIMENSION</text>
+<text x="1418" y="709" text-anchor="end" class="tag">DIM</text>
 <text x="1182" y="742" class="pk">PK</text>
 <text x="1204" y="742" class="c">disbursement_status_key</text>
 <text x="1204" y="760" class="c">disbursement_status</text>
