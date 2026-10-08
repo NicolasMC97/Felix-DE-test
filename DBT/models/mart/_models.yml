@@ -214,3 +214,39 @@ models:
         description: "Net amount involved in USD (difference for amount mismatches, payment amount otherwise)."
       - name: abs_diff_usd
         description: "Absolute amount involved in USD."
+
+  - name: mart_user_daily
+    description: "Behavior per user per payment creation day. Only successful payments; days without activity have no row. Grain: user_id + date_day."
+    columns:
+      - name: user_id
+        description: "Sender."
+        data_tests:
+          - not_null
+      - name: date_day
+        description: "Payment creation date (UTC)."
+        data_tests:
+          - not_null
+      - name: cohort_month
+        description: "Month of the user's first successful payment."
+      - name: days_since_first_payment
+        description: "Days between the first successful payment and this day (0 = first day)."
+      - name: is_first_payment_day
+        description: "True on the day of the user's first successful payment."
+      - name: transfers_count
+        description: "Successful transfers of the user that day."
+      - name: payment_methods_used
+        description: "Distinct payment methods used that day."
+      - name: corridors_used
+        description: "Distinct corridors used that day."
+      - name: tpv_usd
+        description: "TPV that day in USD."
+      - name: fee_revenue_usd
+        description: "Fees paid that day in USD."
+      - name: promotion_cost_usd
+        description: "Promotions given that day in USD."
+      - name: avg_ticket_usd
+        description: "TPV divided by transfers."
+      - name: retried_count
+        description: "Transfers that needed more than one payout attempt."
+      - name: disputed_count
+        description: "Transfers with a dispute or chargeback."

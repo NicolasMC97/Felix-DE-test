@@ -1,0 +1,282 @@
+version: 2
+
+# Semantic models sit on the facts and dimensions, not on the marts, so every ratio is recomputed
+# from additive measures at whatever grain is queried. Entities define the joins:
+#   user -> dim_user, corridor -> dim_corridor, payment_method -> dim_payment_method,
+#   payment_status -> dim_payment_status, payout_provider -> dim_payout_provider.
+
+semantic_models:
+  # ---------------------------------------------------------------- facts
+  - name: transfers
+    description: "Payments with a receipt (fct_transfers). Money measures count successful payments only."
+    model: ref('fct_transfers')
+    defaults:
+      agg_time_dimension: payment_created_at
+    entities:
+      - name: transfer
+        type: primary
+        expr: payment_id
+      - name: user
+        type: foreign
+        expr: user_id
+      - name: corridor
+        type: foreign
+        expr: corridor_key
+      - name: payment_method
+        type: foreign
+        expr: payment_method_key
+    dimensions:
+      - name: payment_created_at
+        type: time
+        expr: date(payment_created_at)
+        type_params:
+          time_granularity: day
+      - name: is_successful_payment
+        type: categorical
+      - name: is_retried
+        type: categorical
+      - name: has_dispute_chargeback
+        type: categorical
+    measures:
+      - name: transfers_count
+        description: "Successful transfers."
+        agg: sum
+        expr: "if(is_successful_payment, 1, 0)"
+      - name: tpv_usd
+        description: "Amount of successful payments in USD."
+        agg: sum
+        expr: "if(is_successful_payment, payment_amount_usd, 0)"
+      - name: principal_usd
+        description: "Amount charged without fee, successful payments."
+        agg: sum
+        expr: "if(is_successful_payment, amount_charged_usd, 0)"
+      - name: fee_revenue_usd
+        description: "Fees paid, successful payments."
+        agg: sum
+        expr: "if(is_successful_payment, fee_usd, 0)"
+      - name: promotion_cost_usd
+        description: "Promotions given to the beneficiary, successful payments."
+        agg: sum
+        expr: "if(is_successful_payment, promotion_amount_usd, 0)"
+      - name: retried_transfers
+        description: "Successful transfers that needed more than one payout attempt."
+        agg: sum
+        expr: "if(is_successful_payment and is_retried, 1, 0)"
+      - name: active_senders
+        description: "Distinct users with a successful payment. Not additive."
+        agg: count_distinct
+        expr: "if(is_successful_payment, user_id, null)"
+      - name: minutes_to_complete_sum
+        description: "Minutes from payment to completed payout, completed payouts only."
+        agg: sum
+        expr: "if(is_successful_payment and is_payout_completed, minutes_to_complete, 0)"
+      - name: completed_payout_transfers
+        description: "Successful transfers whose payout is completed and has a valid duration."
+        agg: sum
+        expr: "if(is_successful_payment and is_payout_completed and minutes_to_complete is not null, 1, 0)"
+
+  - name: payments
+    description: "Every payment, any status (fct_payments). Source of conversion and risk metrics."
+    model: ref('fct_payments')
+    defaults:
+      agg_time_dimension: created_at
+    entities:
+      - name: payment
+        type: primary
+        expr: payment_id
+      - name: user
+        type: foreign
+        expr: user_id
+      - name: payment_method
+        type: foreign
+        expr: payment_method_key
+      - name: payment_status
+        type: foreign
+        expr: payment_status_key
+    dimensions:
+      - name: created_at
+        type: time
+        expr: date(created_at)
+        type_params:
+          time_granularity: day
+      - name: is_payout_not_created
+        type: categorical
+    measures:
+      - name: payments_count
+        description: "Payments attempted, any status."
+        agg: sum
+        expr: "1"
+      - name: successful_payments
+        agg: sum
+        expr: "if(is_successful, 1, 0)"
+      - name: failed_payments
+        agg: sum
+        expr: "if(is_failed, 1, 0)"
+      - name: refunded_payments
+        agg: sum
+        expr: "if(is_refunded, 1, 0)"
+      - name: disputed_payments
+        description: "Payments with a dispute or chargeback (the source merges both)."
+        agg: sum
+        expr: "if(has_dispute_chargeback, 1, 0)"
+      - name: attempted_amount_usd
+        agg: sum
+        expr: "amount_usd"
+      - name: successful_amount_usd
+        agg: sum
+        expr: "if(is_successful, amount_usd, 0)"
+      - name: disputed_amount_usd
+        agg: sum
+        expr: "if(has_dispute_chargeback, amount_usd, 0)"
+
+  - name: disbursements
+    description: "Payout attempts (fct_disbursements). One row counts an attempt, not a payment."
+    model: ref('fct_disbursements')
+    defaults:
+      agg_time_dimension: created_at
+    entities:
+      - name: disbursement
+        type: primary
+        expr: disbursement_id
+      - name: user
+        type: foreign
+        expr: user_id
+      - name: corridor
+        type: foreign
+        expr: corridor_key
+      - name: payout_provider
+        type: foreign
+        expr: payout_provider_key
+    dimensions:
+      - name: created_at
+        type: time
+        expr: date(created_at)
+        type_params:
+          time_granularity: day
+      - name: disbursement_status_group
+        type: categorical
+    measures:
+      - name: payout_attempts
+        agg: sum
+        expr: "1"
+      - name: completed_attempts
+        agg: sum
+        expr: "if(is_completed, 1, 0)"
+      - name: failed_attempts
+        agg: sum
+        expr: "if(disbursement_status_group = 'FAILED', 1, 0)"
+      - name: stuck_attempts
+        description: "In progress or on hold."
+        agg: sum
+        expr: "if(disbursement_status_group in ('IN_PROGRESS', 'ON_HOLD'), 1, 0)"
+      - name: retry_attempts
+        agg: sum
+        expr: "if(attempt_number > 1, 1, 0)"
+      - name: minutes_completed_sum
+        description: "Minutes to complete, completed attempts with a valid duration."
+        agg: sum
+        expr: "if(is_completed and minutes_since_creation is not null, minutes_since_creation, 0)"
+      - name: minutes_completed_count
+        agg: sum
+        expr: "if(is_completed and minutes_since_creation is not null, 1, 0)"
+      - name: median_minutes_to_complete
+        description: "Median minutes to complete, completed attempts only."
+        agg: percentile
+        agg_params:
+          percentile: 0.5
+          use_discrete_percentile: false
+          use_approximate_percentile: true
+        expr: "if(is_completed, minutes_since_creation, null)"
+
+  # ---------------------------------------------------------------- dimensions
+  - name: users
+    description: "Senders (dim_user). Time dimension is the first successful payment, used for new senders."
+    model: ref('dim_user')
+    defaults:
+      agg_time_dimension: first_successful_payment_date
+    entities:
+      - name: user
+        type: primary
+        expr: user_id
+    dimensions:
+      - name: first_successful_payment_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: cohort_month
+        type: time
+        type_params:
+          time_granularity: month
+      - name: is_repeat_user
+        type: categorical
+      - name: has_successful_payment
+        type: categorical
+    measures:
+      - name: new_senders
+        description: "Users whose first successful payment falls in the period."
+        agg: count_distinct
+        expr: "if(has_successful_payment, user_id, null)"
+      - name: repeat_senders
+        description: "Users with two or more successful payments, by date of their first one."
+        agg: count_distinct
+        expr: "if(is_repeat_user, user_id, null)"
+
+  - name: corridors
+    model: ref('dim_corridor')
+    entities:
+      - name: corridor
+        type: primary
+        expr: corridor_key
+    dimensions:
+      - name: corridor_name
+        type: categorical
+      - name: country_code
+        type: categorical
+      - name: country_name
+        type: categorical
+      - name: subregion
+        type: categorical
+      - name: currency_code
+        type: categorical
+
+  - name: payment_methods
+    model: ref('dim_payment_method')
+    entities:
+      - name: payment_method
+        type: primary
+        expr: payment_method_key
+    dimensions:
+      - name: method
+        type: categorical
+        expr: payment_method
+      - name: payment_method_category
+        type: categorical
+
+  - name: payment_statuses
+    model: ref('dim_payment_status')
+    entities:
+      - name: payment_status
+        type: primary
+        expr: payment_status_key
+    dimensions:
+      - name: status
+        type: categorical
+        expr: payment_status
+      - name: payment_status_detail
+        type: categorical
+      - name: failure_category
+        type: categorical
+
+  - name: payout_providers
+    model: ref('dim_payout_provider')
+    entities:
+      - name: payout_provider
+        type: primary
+        expr: payout_provider_key
+    dimensions:
+      - name: provider
+        type: categorical
+      - name: payer_name
+        type: categorical
+      - name: disbursement_method
+        type: categorical

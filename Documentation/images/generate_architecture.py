@@ -1,6 +1,6 @@
-"""Generates Documentation/architecture.svg (the diagram embedded in the root README).
+"""Generates Documentation/images/architecture.svg (the diagram embedded in the root README).
 
-Usage:  python3 Documentation/generate_architecture.py
+Usage:  python3 Documentation/images/generate_architecture.py
 
 Logos are downloaded from Simple Icons (CDN) at run time and embedded as vector paths,
 so the resulting SVG is self-contained and renders on GitHub. Needs network access.
@@ -18,6 +18,7 @@ SOURCES = {
     "bq": "https://cdn.simpleicons.org/googlebigquery",
     "gcs": "https://cdn.simpleicons.org/googlecloudstorage",
     "looker": "https://cdn.simpleicons.org/looker",
+    "sheets": "https://cdn.simpleicons.org/googlesheets",
 }
 
 def icon(url):
@@ -26,7 +27,7 @@ def icon(url):
     return " ".join(re.findall(r'<path d="([^"]+)"', svg))
 
 P = {k: icon(u) for k, u in SOURCES.items()}
-C={'tf':'#844FBA','dbt':'#FF694B','gcp':'#4285F4','bq':'#669DF6','gcs':'#4285F4','looker':'#4285F4'}
+C={'tf':'#844FBA','dbt':'#FF694B','gcp':'#4285F4','bq':'#669DF6','gcs':'#4285F4','looker':'#4285F4','sheets':'#34A853'}
 def logo(k,x,y,size):
     sc=size/24
     return f'<g transform="translate({x},{y}) scale({sc})" fill="{C[k]}"><path d="{P[k]}"/></g>'
@@ -52,13 +53,24 @@ def star_icon(x,y,col='#669DF6'):
             '<rect x="12" y="-1" width="10" height="6" rx="1"/><rect x="12" y="23" width="10" height="6" rx="1"/>'
             '<rect x="-2" y="11" width="8" height="6" rx="1"/><rect x="28" y="11" width="8" height="6" rx="1"/>'
             '<path d="M17 5V9M17 19V23M6 14H12M22 14H28"/></g>')
+def hex_icon(x,y,col='#FF694B'):
+    # semantic layer: a cube with a metric bar chart inside
+    return (f'<g transform="translate({x},{y})" fill="none" stroke="{col}" stroke-width="2"><path d="M17 0L33 8V24L17 32L1 24V8Z"/>'
+            f'<path d="M17 16V32M17 16L33 8M17 16L1 8"/></g>')
+def terminal_icon(x,y,col='#334155'):
+    return (f'<g transform="translate({x},{y})" fill="none" stroke="{col}" stroke-width="2.2"><rect x="0" y="0" width="34" height="28" rx="4"/>'
+            '<path d="M7 9L14 14L7 19M18 20H27" stroke-linecap="round" stroke-linejoin="round"/></g>')
+def api_icon(x,y,col='#334155'):
+    return (f'<g transform="translate({x},{y})" fill="none" stroke="{col}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">'
+            '<path d="M10 2C5 2 7 14 2 14C7 14 5 26 10 26M24 2C29 2 27 14 32 14C27 14 29 26 24 26"/>'
+            f'<circle cx="17" cy="14" r="1.6" fill="{col}"/></g>')
 def arrow(d,color='#475569',dashed=False,label=None,lx=0,ly=0):
     da=' stroke-dasharray="6 5"' if dashed else ''
     s=f'<path d="{d}" fill="none" stroke="{color}" stroke-width="2"{da} marker-end="url(#a{"d" if dashed else ""})"/>'
     if label: s+=f'<text x="{lx}" y="{ly}" text-anchor="middle" class="l">{label}</text>'
     return s
 
-W,H=1560,620
+W,H=1930,700
 o=[]
 o.append(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" aria-label="Architecture diagram">')
 o.append('''<defs>
@@ -96,24 +108,48 @@ o.append(box(790,BY,140,110,'Transformations','trf_* tables (3)',stroke='#669DF6
 o.append(table_icon(843,BY+22,'#2563EB'))
 o.append(box(960,BY,140,110,'Dims &amp; Facts','7 dims, 3 facts',stroke='#669DF6'))
 o.append(star_icon(1013,BY+22))
-o.append(box(1130,BY,140,110,'Marts','mart_* tables (6)',stroke='#669DF6'))
+o.append(box(1130,BY,140,110,'Marts','mart_* tables (7)',stroke='#669DF6'))
 o.append(bars_icon(1183,BY+22,'#2563EB'))
 # BI consumer
-o.append(box(1350,BY,160,110,'Looker','BI, reads the marts',dashed=True,stroke='#4285F4'))
-o.append(logo('looker',1417,BY+14,36))
+o.append(box(1345,BY,170,110,'Semantic layer','MetricFlow, 53 metrics',stroke='#FF694B'))
+o.append(hex_icon(1413,BY+20))
+# consumers of the semantic layer (x=1700)
+CX,CW,CH=1700,190,100
+def consumer(i,title,sub,dashed=True,stroke='#94A3B8'):
+    return box(CX,80+i*115,CW,CH,title,sub,dashed=dashed,stroke=stroke)
+o.append(consumer(0,'Looker','marts + dbt Cloud metrics',stroke='#4285F4'))
+o.append(logo('looker',CX+CW/2-18,80+14,36))
+o.append(consumer(1,'Google Sheets','dbt Cloud connector',stroke='#34A853'))
+o.append(logo('sheets',CX+CW/2-18,195+14,36))
+o.append(consumer(2,'BI tools','Tableau, Power BI, Hex'))
+o.append(bars_icon(CX+CW/2-17,310+18))
+o.append(consumer(3,'MetricFlow CLI','mf query, works today',dashed=False,stroke='#334155'))
+o.append(terminal_icon(CX+CW/2-17,425+18))
+o.append(consumer(4,'JDBC / GraphQL API','dbt Cloud Semantic Layer API'))
+o.append(api_icon(CX+CW/2-17,540+18))
 # dbt
-o.append(box(640,490,620,95,'dbt','DBT/ - build and test: staging, transformations, dims, facts, marts',stroke='#FF694B'))
+o.append(box(640,490,620,95,'dbt','DBT/ - build and test: staging, transformations, dims, facts, marts, semantic',stroke='#FF694B'))
 o.append(logo('dbt',934,500,32))
 # data flow
 o.append(arrow('M180 305H235',label='upload',lx=207,ly=294))
 o.append(arrow('M395 305H450',label='external',lx=422,ly=294))
 for a,b in [(590,620),(760,790),(930,960),(1100,1130)]:
     o.append(arrow(f'M{a} 305H{b}'))
-o.append(arrow('M1270 305H1350',label='BI',lx=1310,ly=294))
+# semantic layer reads facts and dims (not the marts)
+o.append(arrow('M1075 360V412H1400V360',label='SQL on facts/dims',lx=1137,ly=404))
+# semantic layer -> consumers
+o.append('<path d="M1515 305H1610" fill="none" stroke="#475569" stroke-width="2"/>')
+for i,yc in enumerate((130,245,360,475,590)):
+    solid = i==3
+    o.append(arrow(f'M1610 305V{yc}H1700',dashed=not solid,color='#475569' if solid else '#94A3B8'))
+# Looker also reads the marts directly
+o.append(arrow('M1245 250V100H1700',label='SQL on marts',lx=1470,ly=92))
 # provisioning / build
 o.append(arrow('M180 145H215',dashed=True,color='#94A3B8'))
 for x in (690,860,1030,1200):
     o.append(arrow(f'M{x} 490V360',dashed=True,color='#94A3B8'))
-o.append('<text x="30" y="590" class="s">Solid arrows: data flow. Dashed arrows: provisioning / build. Dashed box: BI consumer, not part of this repo.</text>')
+o.append(arrow('M1260 537H1470V360',dashed=True,color='#94A3B8'))
+o.append('<text x="30" y="660" class="s">Solid arrows: data flow. Dashed arrows: provisioning / build, or access that needs dbt Cloud. Dashed boxes: consumers outside this repo.</text>')
+o.append('<text x="30" y="680" class="s">The semantic layer is queried today with the open-source MetricFlow CLI; the other consumers need the layer published through dbt Cloud.</text>')
 o.append('</svg>')
 OUT.write_text('\n'.join(o))
